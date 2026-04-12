@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WKZ · Verbindung wird hergestellt…</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #0A0E1A;
+      color: #C9D1E0;
+      font-family: 'Courier New', monospace;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+    }
+    .box {
+      text-align: center;
+      padding: 40px;
+    }
+    .logo {
+      font-size: 22px;
+      font-weight: 800;
+      color: #F1F5F9;
+      letter-spacing: -0.5px;
+      margin-bottom: 24px;
+    }
+    .spinner {
+      width: 36px;
+      height: 36px;
+      border: 3px solid rgba(96,165,250,0.2);
+      border-top-color: #60A5FA;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto 20px;
+    }
+    .msg { font-size: 13px; color: rgba(255,255,255,0.4); }
+    .err { font-size: 13px; color: #F87171; margin-top: 12px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+  <div class="box">
+    <div class="logo">WKZ CONTROLLING</div>
+    <div class="spinner"></div>
+    <div class="msg" id="msg">Dropbox-Verbindung wird hergestellt…</div>
+    <div class="err" id="err"></div>
+  </div>
+  <script>
+    const hash   = window.location.hash.substring(1);
+    const params = new URLSearchParams(hash);
+    const token  = params.get("access_token");
+    const err    = params.get("error_description") || params.get("error");
+
+    if (token) {
+      // Speichere Token im localStorage und leite zurück zur App
+      try { localStorage.setItem("dbx_token", token); } catch(e) {}
+      document.getElementById("msg").textContent = "Verbunden! Du wirst weitergeleitet…";
+      // Schließe das Fenster oder leite weiter
+      setTimeout(() => {
+        if (window.opener) {
+          window.opener.postMessage({ type: "DBX_TOKEN", token }, "*");
+          window.close();
+        } else {
+          window.location.href = "/";
+        }
+      }, 800);
+    } else if (err) {
+      document.getElementById("msg").textContent = "";
+      document.getElementById("err").textContent = "Fehler: " + err;
+    } else {
+      document.getElementById("err").textContent = "Kein Token empfangen. Bitte erneut versuchen.";
+    }
+  </script>
+</body>
+</html>
