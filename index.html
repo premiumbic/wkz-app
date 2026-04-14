@@ -1,0 +1,2310 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>WKZ Controlling · premium concepts</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@700;800&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'DM Mono', 'Courier New', monospace; background: #0A0E1A; color: #C9D1E0; min-height: 100vh; }
+    input, select, textarea, button { font-family: inherit; }
+
+    /* ── Layout ── */
+    .screen { display: none; }
+    .screen.active { display: block; }
+    .center-screen { min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+    .auth-box { width: 100%; max-width: 400px; padding: 32px; }
+    .logo { text-align: center; margin-bottom: 36px; }
+    .logo-title { font-family: 'Syne', sans-serif; font-size: 26px; font-weight: 800; color: #F1F5F9; letter-spacing: -1px; }
+    .logo-sub { font-size: 11px; color: rgba(255,255,255,0.2); margin-top: 4px; }
+    .card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 28px; }
+
+    /* ── Inputs ── */
+    .inp { width: 100%; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); color: #C9D1E0; border-radius: 7px; padding: 9px 12px; font-size: 13px; outline: none; transition: border-color 0.15s; }
+    .inp:focus { border-color: #60A5FA; }
+    textarea.inp { resize: vertical; }
+    select.inp option { background: #1A2035; }
+
+    /* ── Buttons ── */
+    .btn { border: none; border-radius: 8px; padding: 11px 20px; font-weight: 700; cursor: pointer; font-size: 13px; transition: opacity 0.15s; }
+    .btn:disabled { opacity: 0.5; cursor: default; }
+    .btn-primary { background: #60A5FA; color: #0A0E1A; width: 100%; }
+    .btn-green { background: #34D399; color: #0A0E1A; width: 100%; }
+    .btn-dropbox { background: #0061FF; color: #fff; width: 100%; margin-bottom: 12px; display: flex; align-items: center; justify-content: center; gap: 10px; }
+    .btn-ghost { background: transparent; border: 1px solid rgba(255,255,255,0.1); color: rgba(255,255,255,0.35); }
+    .btn-danger { background: rgba(248,113,113,0.08); border: 1px solid rgba(248,113,113,0.25); color: #F87171; }
+    .btn-sm { padding: 6px 14px; font-size: 12px; border-radius: 6px; }
+
+    /* ── Progress bar ── */
+    .progress { display: flex; gap: 8px; margin-bottom: 28px; }
+    .progress-bar { flex: 1; height: 3px; border-radius: 2px; background: rgba(255,255,255,0.1); transition: background 0.3s; }
+    .progress-bar.done { background: #60A5FA; }
+
+    /* ── Field ── */
+    .field { margin-bottom: 12px; }
+    .field-label { font-size: 11px; color: rgba(255,255,255,0.35); margin-bottom: 5px; }
+
+    /* ── Error ── */
+    .err-msg { font-size: 12px; color: #F87171; margin-bottom: 12px; }
+
+    /* ── Header ── */
+    header { background: rgba(255,255,255,0.02); border-bottom: 1px solid rgba(255,255,255,0.06); padding: 0 24px; position: sticky; top: 0; z-index: 100; }
+    .header-inner { max-width: 1100px; margin: 0 auto; height: 56px; display: flex; align-items: center; justify-content: space-between; }
+    .header-logo { font-family: 'Syne', sans-serif; font-size: 17px; font-weight: 800; color: #F1F5F9; letter-spacing: -0.5px; }
+    .header-sub { font-size: 11px; color: rgba(255,255,255,0.2); margin-left: 10px; }
+    nav { display: flex; gap: 2px; align-items: center; }
+    .nav-btn { padding: 6px 14px; border-radius: 6px; border: none; cursor: pointer; font-size: 12px; background: transparent; color: rgba(255,255,255,0.35); transition: all 0.15s; }
+    .nav-btn.active { background: rgba(96,165,250,0.15); color: #60A5FA; }
+    .nav-divider { width: 1px; height: 20px; background: rgba(255,255,255,0.1); margin: 0 8px; }
+    .nav-user { font-size: 11px; color: rgba(255,255,255,0.3); margin-right: 8px; }
+    .logout-btn { background: transparent; border: 1px solid rgba(255,255,255,0.1); color: rgba(255,255,255,0.3); border-radius: 6px; padding: 5px 12px; cursor: pointer; font-size: 11px; }
+
+    /* ── Main ── */
+    main { max-width: 1100px; margin: 0 auto; padding: 28px 24px; }
+    .page { display: none; }
+    .page.active { display: block; }
+
+    /* ── KPI cards ── */
+    .kpi-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; margin-bottom: 16px; }
+    .kpi-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 12px; padding: 18px 20px; }
+    .kpi-label { font-size: 11px; color: rgba(255,255,255,0.3); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 8px; }
+    .kpi-value { font-family: 'Syne', sans-serif; font-size: 26px; font-weight: 800; letter-spacing: -0.5px; }
+    .kpi-sub { font-size: 11px; color: rgba(255,255,255,0.2); margin-top: 4px; }
+
+    /* ── Status pills row ── */
+    .status-row { display: flex; gap: 8px; margin-bottom: 28px; }
+    .status-chip { flex: 1; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 8px; padding: 12px 14px; display: flex; align-items: center; justify-content: space-between; }
+    .status-chip-label { font-size: 11px; color: rgba(255,255,255,0.35); }
+    .status-chip-count { font-family: 'Syne', sans-serif; font-size: 20px; font-weight: 700; }
+
+    /* ── Section title ── */
+    .section-title { font-size: 11px; color: rgba(255,255,255,0.25); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 10px; }
+
+    /* ── Entry row ── */
+    .entry-row { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 10px; padding: 14px 18px; margin-bottom: 7px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; transition: all 0.15s; }
+    .entry-row:hover { background: rgba(255,255,255,0.05); border-color: rgba(96,165,250,0.3); }
+    .entry-row-left { display: flex; gap: 12px; align-items: center; }
+    .entry-name { font-size: 13px; font-weight: 500; color: #E2E8F0; }
+    .entry-contact { color: rgba(255,255,255,0.4); font-weight: 400; }
+    .entry-desc { font-size: 11px; color: rgba(255,255,255,0.3); margin-top: 2px; }
+    .entry-amount { font-family: 'Syne', sans-serif; font-size: 17px; font-weight: 700; color: #F1F5F9; flex-shrink: 0; margin-left: 16px; }
+
+    /* ── Status pill ── */
+    .status-pill { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 500; }
+    .status-dot { width: 5px; height: 5px; border-radius: 50%; }
+
+    /* ── Badge ── */
+    .badge { font-size: 10px; padding: 1px 6px; border-radius: 10px; margin-left: 6px; }
+    .badge-region { background: rgba(96,165,250,0.12); color: #60A5FA; }
+    .badge-kam { background: rgba(167,139,250,0.12); color: #A78BFA; }
+
+    /* ── Warn ── */
+    .warn-badge { color: #F59E0B; margin-left: 8px; }
+
+    /* ── Form section ── */
+    .form-sec { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.07); border-radius: 12px; padding: 18px; margin-bottom: 12px; }
+    .form-sec-title { font-size: 10px; color: rgba(255,255,255,0.25); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 14px; }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+    .radio-row { display: flex; gap: 16px; margin-bottom: 12px; }
+    .radio-label { display: flex; align-items: center; gap: 7px; cursor: pointer; font-size: 13px; color: rgba(255,255,255,0.55); }
+    input[type=radio] { accent-color: #60A5FA; }
+
+    /* ── Detail ── */
+    .detail-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 14px; padding: 24px; margin-bottom: 14px; }
+    .detail-amount { font-family: 'Syne', sans-serif; font-size: 32px; font-weight: 800; color: #F1F5F9; margin-top: 10px; letter-spacing: -1px; }
+    .detail-partner { font-size: 14px; color: rgba(255,255,255,0.5); margin-top: 4px; }
+    .detail-meta { text-align: right; font-size: 11px; color: rgba(255,255,255,0.2); line-height: 1.8; }
+    .detail-row { display: flex; gap: 16px; padding: 10px 0; border-top: 1px solid rgba(255,255,255,0.05); }
+    .detail-row-label { width: 140px; flex-shrink: 0; font-size: 12px; color: rgba(255,255,255,0.3); }
+    .detail-row-value { font-size: 13px; color: rgba(255,255,255,0.75); }
+
+    /* ── Status changer ── */
+    .status-changer { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.07); border-radius: 12px; padding: 18px; }
+    .status-changer-title { font-size: 11px; color: rgba(255,255,255,0.25); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 12px; }
+    .status-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+    .status-change-btn { padding: 8px 18px; border-radius: 6px; font-size: 12px; cursor: pointer; transition: all 0.15s; }
+
+    /* ── Filters ── */
+    .filter-row { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+
+    /* ── Charts ── */
+    .chart-card {
+      background: rgba(255,255,255,0.02);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 14px;
+      padding: 24px;
+      margin-top: 16px;
+      position: relative;
+      transition: all 0.3s ease;
+    }
+    .chart-card:hover { border-color: rgba(96,165,250,0.15); }
+    .chart-title { font-family: 'Syne', sans-serif; font-size: 16px; font-weight: 700; color: #F1F5F9; }
+    .chart-sub { font-size: 11px; color: rgba(255,255,255,0.25); margin-top: 2px; margin-bottom: 16px; }
+    .charts-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px; }
+    .chart-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 4px; }
+    .chart-actions { display: flex; gap: 6px; align-items: center; }
+    .chart-maximize-btn {
+      width: 28px; height: 28px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.1);
+      background: transparent; color: rgba(255,255,255,0.3); cursor: pointer; font-size: 14px;
+      display: flex; align-items: center; justify-content: center; transition: all 0.2s;
+    }
+    .chart-maximize-btn:hover { background: rgba(96,165,250,0.15); border-color: rgba(96,165,250,0.4); color: #60A5FA; }
+    .chart-toggle-btn {
+      padding: 4px 10px; border-radius: 5px; border: 1px solid rgba(255,255,255,0.1);
+      background: transparent; color: rgba(255,255,255,0.35); cursor: pointer; font-size: 11px;
+      font-family: inherit; transition: all 0.2s;
+    }
+    .chart-toggle-btn.active { background: rgba(96,165,250,0.15); border-color: rgba(96,165,250,0.4); color: #60A5FA; }
+    .chart-toggle-btn:hover { border-color: rgba(96,165,250,0.3); color: rgba(255,255,255,0.6); }
+
+    /* ── Charts KPI row ── */
+    .charts-kpi-row {
+      display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; margin-bottom: 8px;
+    }
+    .charts-kpi {
+      background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 10px; padding: 14px 16px; transition: all 0.3s ease;
+    }
+    .charts-kpi:hover { border-color: rgba(96,165,250,0.2); }
+    .charts-kpi-label { font-size: 10px; color: rgba(255,255,255,0.3); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 6px; }
+    .charts-kpi-value { font-family: 'Syne', sans-serif; font-size: 20px; font-weight: 800; letter-spacing: -0.5px; }
+    .charts-kpi-sub { font-size: 10px; color: rgba(255,255,255,0.25); margin-top: 3px; }
+
+    /* ── Maximize overlay ── */
+    .chart-overlay {
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(10,14,26,0.92); backdrop-filter: blur(8px);
+      z-index: 1000; display: none; align-items: center; justify-content: center;
+      padding: 40px; animation: fadeIn 0.2s ease;
+    }
+    .chart-overlay.active { display: flex; }
+    .chart-overlay-inner {
+      background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 16px; padding: 32px; width: 100%; max-width: 1000px;
+      max-height: 90vh; position: relative;
+    }
+    .chart-overlay-close {
+      position: absolute; top: 16px; right: 16px; width: 32px; height: 32px;
+      border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); background: transparent;
+      color: rgba(255,255,255,0.5); cursor: pointer; font-size: 16px;
+      display: flex; align-items: center; justify-content: center; transition: all 0.2s;
+    }
+    .chart-overlay-close:hover { background: rgba(248,113,113,0.15); border-color: rgba(248,113,113,0.4); color: #F87171; }
+    .chart-overlay-title { font-family: 'Syne', sans-serif; font-size: 20px; font-weight: 700; color: #F1F5F9; margin-bottom: 4px; }
+    .chart-overlay-sub { font-size: 12px; color: rgba(255,255,255,0.3); margin-bottom: 20px; }
+    .chart-overlay-canvas { width: 100%; height: 400px; }
+
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+    /* ── Filter Chips ── */
+    .chart-filter-chips { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+    .chart-chip {
+      padding: 4px 12px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.1);
+      background: transparent; color: rgba(255,255,255,0.4); cursor: pointer;
+      font-size: 11px; font-family: inherit; transition: all 0.2s;
+    }
+    .chart-chip:hover { border-color: rgba(96,165,250,0.3); background: rgba(96,165,250,0.05); }
+    .chart-chip.active { background: rgba(96,165,250,0.15); border-color: rgba(96,165,250,0.4); color: #60A5FA; font-weight: 600; }
+
+    /* ── Table ── */
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th { text-align: left; padding: 8px 12px; font-size: 11px; color: rgba(255,255,255,0.3); font-weight: 500; border-bottom: 1px solid rgba(255,255,255,0.08); cursor: default; }
+    th.sortable { cursor: pointer; user-select: none; transition: background 0.15s; }
+    th.sortable:hover { background: rgba(255,255,255,0.03); }
+    td { padding: 10px 12px; border-bottom: 1px solid rgba(255,255,255,0.04); }
+
+    /* ── Empty ── */
+    .empty { text-align: center; padding: 60px 0; color: rgba(255,255,255,0.2); }
+    .empty-icon { font-size: 36px; margin-bottom: 12px; }
+    .empty-text { font-size: 13px; }
+
+    /* ── Toast ── */
+    #toast { position: fixed; top: 16px; right: 16px; z-index: 9999; padding: 10px 18px; border-radius: 8px; font-size: 13px; box-shadow: 0 8px 32px rgba(0,0,0,0.5); display: none; }
+
+    /* ── Spinner ── */
+    .spinner { width: 28px; height: 28px; border: 3px solid rgba(96,165,250,0.2); border-top-color: #60A5FA; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 16px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Page header ── */
+    .page-header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 20px; }
+    .page-title { font-family: 'Syne', sans-serif; font-size: 26px; font-weight: 800; color: #F1F5F9; letter-spacing: -0.6px; }
+    .page-sub { font-size: 12px; color: rgba(255,255,255,0.25); margin-top: 4px; }
+
+    /* ── Form actions ── */
+    .form-actions { display: flex; gap: 10px; margin-top: 4px; }
+
+    /* ── Detail header ── */
+    .detail-header { display: flex; gap: 10px; align-items: center; margin-bottom: 24px; }
+
+    /* ── Cockpit ── */
+    .cockpit { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:4px; }
+    .cockpit-card { background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07); border-radius:10px; padding:14px 16px; }
+    .cockpit-label { font-size:10px; color:rgba(255,255,255,0.3); letter-spacing:1px; text-transform:uppercase; margin-bottom:6px; }
+    .cockpit-value { font-family:"Syne",sans-serif; font-size:20px; font-weight:800; letter-spacing:-0.5px; }
+    .cockpit-sub { font-size:10px; color:rgba(255,255,255,0.25); margin-top:3px; }
+    .cockpit-bar-wrap { margin-top:16px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07); border-radius:10px; padding:14px 16px; }
+    .cockpit-bar-title { font-size:11px; color:rgba(255,255,255,0.3); letter-spacing:1px; text-transform:uppercase; margin-bottom:10px; }
+    .cockpit-bar-row { display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+    .cockpit-bar-name { font-size:12px; color:rgba(255,255,255,0.6); width:140px; flex-shrink:0; }
+    .cockpit-bar-track { flex:1; height:6px; background:rgba(255,255,255,0.06); border-radius:3px; overflow:hidden; }
+    .cockpit-bar-fill { height:100%; border-radius:3px; transition:width 0.4s ease; }
+    .cockpit-bar-val { font-size:11px; color:rgba(255,255,255,0.4); width:90px; text-align:right; flex-shrink:0; }
+    @media(max-width:640px){ .cockpit{grid-template-columns:1fr 1fr;} }
+
+    /* ── Time filter ── */
+    .time-filter { display:flex; gap:8px; align-items:center; margin-bottom:20px; flex-wrap:wrap; }
+    .time-filter-label { font-size:11px; color:rgba(255,255,255,0.3); letter-spacing:1px; text-transform:uppercase; margin-right:4px; }
+    .tf-btn { padding:5px 14px; border-radius:6px; border:1px solid rgba(255,255,255,0.1); background:transparent; color:rgba(255,255,255,0.35); font-size:12px; cursor:pointer; font-family:inherit; transition:all 0.15s; }
+    .tf-btn.active { background:rgba(96,165,250,0.15); border-color:rgba(96,165,250,0.4); color:#60A5FA; font-weight:600; }
+    .tf-custom { display:flex; gap:6px; align-items:center; margin-left:8px; }
+
+    .tf-select { background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); color:#C9D1E0; border-radius:6px; padding:5px 10px; font-size:12px; font-family:inherit; outline:none; cursor:pointer; }
+    .tf-select option { background:#1A2035; }
+
+    .tf-custom input { width:120px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); color:#C9D1E0; border-radius:6px; padding:5px 8px; font-size:12px; font-family:inherit; outline:none; }
+
+    /* ── Quartal table ── */
+    .q-table { width:100%; border-collapse:collapse; font-size:12px; margin-top:8px; }
+    .q-table th { text-align:right; padding:7px 10px; font-size:10px; color:rgba(255,255,255,0.3); font-weight:500; border-bottom:1px solid rgba(255,255,255,0.08); }
+    .q-table th:first-child { text-align:left; }
+    .q-table td { text-align:right; padding:7px 10px; border-bottom:1px solid rgba(255,255,255,0.04); color:rgba(255,255,255,0.7); }
+    .q-table td:first-child { text-align:left; color:#E2E8F0; font-weight:500; }
+    .q-table tr:last-child td { border-bottom:none; color:#F1F5F9; font-weight:700; border-top:1px solid rgba(255,255,255,0.12); }
+    .q-table .pos { color:#34D399; }
+    .q-table .neg { color:#F87171; }
+
+    @media (max-width: 640px) {
+      .kpi-grid { grid-template-columns: 1fr; }
+      .status-row { flex-wrap: wrap; }
+      .charts-2col { grid-template-columns: 1fr; }
+      .charts-kpi-row { grid-template-columns: 1fr 1fr; }
+      .grid-2, .grid-3 { grid-template-columns: 1fr; }
+      .chart-overlay { padding: 16px; }
+      .chart-overlay-canvas { height: 280px; }
+    }
+
+    @media print {
+      .chart-card { box-shadow: none; border: 1px solid #ddd; page-break-inside: avoid; }
+      .chart-maximize-btn, .chart-toggle-btn, .chart-actions, .time-filter { display: none !important; }
+      .charts-2col { grid-template-columns: 1fr; }
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── SETUP SCREEN ─────────────────────────────────────────────────────── -->
+<div id="screen-setup" class="screen active">
+  <div class="center-screen">
+    <div class="auth-box">
+      <div class="logo">
+        <div class="logo-title">WKZ</div>
+        <div class="logo-sub">CONTROLLING · premium concepts GmbH</div>
+      </div>
+      <div class="card">
+        <div class="progress">
+          <div class="progress-bar done" id="prog1"></div>
+          <div class="progress-bar" id="prog2"></div>
+        </div>
+
+        <!-- Step 1: Token -->
+        <div id="setup-step1">
+          <div style="font-family:'Syne',sans-serif;font-size:17px;font-weight:700;color:#F1F5F9;margin-bottom:8px;">Dropbox verbinden</div>
+          <div style="font-size:12px;color:rgba(255,255,255,0.4);margin-bottom:20px;line-height:1.6;">
+            Generiere einen Access Token in deiner Dropbox-App und füge ihn hier ein. Der Token wird nur in deinem Browser gespeichert.
+          </div>
+          <button class="btn btn-dropbox" onclick="openDropboxAuth()">
+            <svg width="18" height="18" viewBox="0 0 40 40" fill="none"><path d="M10 6L20 12.5L10 19L0 12.5Z" fill="white"/><path d="M30 6L40 12.5L30 19L20 12.5Z" fill="white"/><path d="M10 21L20 27.5L10 34L0 27.5Z" fill="white"/><path d="M30 21L40 27.5L30 34L20 27.5Z" fill="white"/><path d="M20 28.5L30 22L20 15.5L10 22Z" fill="white" opacity="0.7"/></svg>
+            Mit Dropbox verbinden (empfohlen)
+          </button>
+          <div style="text-align:center;font-size:10px;color:rgba(96,165,250,0.5);margin-bottom:8px;">Automatische Token-Erneuerung · kein manuelles Erneuern nötig</div>
+          <div style="text-align:center;font-size:11px;color:rgba(255,255,255,0.2);margin-bottom:12px;">oder Access Token manuell eingeben</div>
+          <div class="field">
+            <textarea id="token-input" class="inp" rows="3" placeholder="sl.u.XXXXXX…"></textarea>
+          </div>
+          <div class="err-msg" id="setup-err" style="display:none;"></div>
+          <button class="btn btn-primary" id="token-next-btn" onclick="validateToken()">Weiter →</button>
+        </div>
+
+        <!-- Step 2: Password -->
+        <div id="setup-step2" style="display:none;">
+          <div style="font-family:'Syne',sans-serif;font-size:17px;font-weight:700;color:#F1F5F9;margin-bottom:8px;">App-Passwort festlegen</div>
+          <div style="font-size:12px;color:rgba(255,255,255,0.4);margin-bottom:20px;line-height:1.6;">
+            Dieses Passwort schützt die App. Alle Nutzer verwenden dasselbe Passwort.
+          </div>
+          <div class="field">
+            <div class="field-label">Passwort</div>
+            <input type="password" id="pw-input" class="inp" placeholder="Mindestens 4 Zeichen"/>
+          </div>
+          <div class="field">
+            <div class="field-label">Passwort wiederholen</div>
+            <input type="password" id="pw-confirm" class="inp" placeholder="Wiederholen" onkeydown="if(event.key==='Enter')savePassword()"/>
+          </div>
+          <div class="err-msg" id="pw-err" style="display:none;"></div>
+          <button class="btn btn-green" id="pw-save-btn" onclick="savePassword()">App einrichten ✓</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── PASSWORD SCREEN ──────────────────────────────────────────────────── -->
+<div id="screen-password" class="screen">
+  <div class="center-screen">
+    <div class="auth-box">
+      <div class="logo">
+        <div class="logo-title">WKZ</div>
+        <div class="logo-sub">CONTROLLING · premium concepts GmbH</div>
+      </div>
+      <div class="card">
+        <div style="font-family:'Syne',sans-serif;font-size:17px;font-weight:700;color:#F1F5F9;margin-bottom:8px;">Anmelden</div>
+        <div style="font-size:12px;color:rgba(255,255,255,0.4);margin-bottom:20px;">Bitte Passwort eingeben um fortzufahren.</div>
+        <div class="field">
+          <input type="password" id="pw-login" class="inp" placeholder="Passwort" onkeydown="if(event.key==='Enter')doLogin()" autofocus/>
+        </div>
+        <div class="err-msg" id="login-err" style="display:none;"></div>
+        <button class="btn btn-primary" id="login-btn" onclick="doLogin()">Anmelden →</button>
+        <button onclick="resetSetup()" style="width:100%;background:transparent;border:none;color:rgba(255,255,255,0.2);font-size:11px;cursor:pointer;margin-top:16px;font-family:inherit;">
+          Neu einrichten (Token zurücksetzen)
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── MAIN APP ─────────────────────────────────────────────────────────── -->
+<div id="screen-app" class="screen">
+  <header>
+    <div class="header-inner">
+      <div style="display:flex;align-items:center;">
+        <span class="header-logo">WKZ</span>
+        <span class="header-sub">CONTROLLING · premium concepts</span>
+      </div>
+      <nav>
+        <button class="nav-btn active" onclick="showPage('dashboard',this)">Dashboard</button>
+        <button class="nav-btn" onclick="showPage('charts',this)">Auswertung</button>
+        <button class="nav-btn" onclick="showPage('list',this)">Übersicht</button>
+        <button class="nav-btn" onclick="showPage('form',this);openNew()">+ Neu</button>
+        <div class="nav-divider"></div>
+        <span class="nav-user" id="nav-user"></span>
+        <button class="logout-btn" onclick="resetSetup()">Abmelden</button>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <!-- DASHBOARD -->
+    <div id="page-dashboard" class="page active">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;">
+        <div>
+          <h1 style="font-family:'Syne',sans-serif;font-size:28px;font-weight:800;color:#F1F5F9;letter-spacing:-0.8px;">Dashboard</h1>
+          <p style="font-size:12px;color:rgba(255,255,255,0.25);margin-top:4px;" id="dash-period-label">Alle Zeiträume</p>
+        </div>
+      </div>
+      <div class="time-filter" id="dash-time-filter">
+        <div id="dash-filter-btns" style="display:contents;"></div>
+        <div class="tf-custom" id="dash-custom" style="display:none;">
+          <input type="date" id="dash-from" onchange="applyCustomFilter('dash')"/>
+          <span style="color:rgba(255,255,255,0.3);font-size:12px;">bis</span>
+          <input type="date" id="dash-to" onchange="applyCustomFilter('dash')"/>
+        </div>
+      </div>
+      <div class="kpi-grid">
+        <div class="kpi-card"><div class="kpi-label">Ausstehend</div><div class="kpi-value" id="kpi-ausstehend" style="color:#F59E0B;">–</div><div class="kpi-sub">offen + beantragt</div></div>
+        <div class="kpi-card"><div class="kpi-label">Ausgezahlt</div><div class="kpi-value" id="kpi-ausgezahlt" style="color:#34D399;">–</div><div class="kpi-sub">bereits erhalten</div></div>
+        <div class="kpi-card"><div class="kpi-label">Einträge</div><div class="kpi-value" id="kpi-gesamt" style="color:#60A5FA;">0</div><div class="kpi-sub">gesamt erfasst</div></div>
+      </div>
+      <div class="status-row">
+        <div class="status-chip"><span class="status-chip-label">Offen</span><span class="status-chip-count" id="cnt-offen" style="color:#F59E0B;">0</span></div>
+        <div class="status-chip"><span class="status-chip-label">Beantragt</span><span class="status-chip-count" id="cnt-beantragt" style="color:#60A5FA;">0</span></div>
+        <div class="status-chip"><span class="status-chip-label">Ausgezahlt</span><span class="status-chip-count" id="cnt-ausgezahlt" style="color:#34D399;">0</span></div>
+        <div class="status-chip"><span class="status-chip-label">Abgelehnt</span><span class="status-chip-count" id="cnt-abgelehnt" style="color:#F87171;">0</span></div>
+      </div>
+      <div class="section-title">Zuletzt erfasst</div>
+      <div id="dashboard-list"></div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════════════════
+         AUSWERTUNG (Enhanced)
+         ══════════════════════════════════════════════════════════════════════ -->
+    <div id="page-charts" class="page">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;">
+        <div>
+          <h1 style="font-family:'Syne',sans-serif;font-size:28px;font-weight:800;color:#F1F5F9;letter-spacing:-0.8px;">Auswertung</h1>
+          <p style="font-size:12px;color:rgba(255,255,255,0.25);margin-top:4px;" id="charts-period-label">Alle Zeiträume</p>
+        </div>
+      </div>
+
+      <div class="time-filter" id="charts-time-filter">
+        <div id="charts-filter-btns" style="display:contents;"></div>
+        <div class="tf-custom" id="charts-custom" style="display:none;">
+          <input type="date" id="charts-from" onchange="applyCustomFilter('charts')"/>
+          <span style="color:rgba(255,255,255,0.3);font-size:12px;">bis</span>
+          <input type="date" id="charts-to" onchange="applyCustomFilter('charts')"/>
+        </div>
+      </div>
+
+      <div id="charts-empty" class="empty" style="display:none;"><div class="empty-icon">📭</div><div class="empty-text">Noch keine Daten für Auswertungen.</div></div>
+
+      <div id="charts-content">
+
+        <!-- KPI Summary Row -->
+        <div class="charts-kpi-row" id="charts-kpi-row"></div>
+
+        <!-- 1. Monatliche Entwicklung (Line + Bar combo) -->
+        <div class="chart-card">
+          <div class="chart-header">
+            <div>
+              <div class="chart-title">Monatliche Entwicklung</div>
+              <div class="chart-sub">Kumulierter Verlauf nach Zahlungsziel</div>
+            </div>
+            <div class="chart-actions">
+              <button class="chart-toggle-btn active" id="chart-monthly-mode-bar" onclick="setMonthlyMode('bar')">Balken</button>
+              <button class="chart-toggle-btn" id="chart-monthly-mode-line" onclick="setMonthlyMode('line')">Trend</button>
+              <button class="chart-toggle-btn" id="chart-monthly-mode-cumulative" onclick="setMonthlyMode('cumulative')">Kumuliert</button>
+              <button class="chart-maximize-btn" onclick="maximizeChart('monthly')" title="Vollbild">⛶</button>
+            </div>
+          </div>
+          <div style="height:220px;"><canvas id="chart-monthly"></canvas></div>
+        </div>
+
+        <!-- 2. Two-column: Region vs KAM Doughnut + Table -->
+        <div class="charts-2col">
+          <div class="chart-card">
+            <div class="chart-header">
+              <div>
+                <div class="chart-title">Region vs. KAM</div>
+                <div class="chart-sub">WKZ-Volumen nach Quelle</div>
+              </div>
+              <div class="chart-actions">
+                <button class="chart-maximize-btn" onclick="maximizeChart('quelleDonut')" title="Vollbild">⛶</button>
+              </div>
+            </div>
+            <div style="height:200px;"><canvas id="chart-quelle-donut"></canvas></div>
+          </div>
+          <div class="chart-card">
+            <div class="chart-header">
+              <div>
+                <div class="chart-title">Region vs. KAM · Detail</div>
+                <div class="chart-sub">Aufschlüsselung nach Quartal</div>
+              </div>
+            </div>
+            <div id="quelle-table" style="max-height:240px;overflow-y:auto;"></div>
+          </div>
+        </div>
+
+        <!-- 3. Ansprechpartner Trend (NEW - Line chart) -->
+        <div class="chart-card">
+          <div class="chart-header">
+            <div>
+              <div class="chart-title">Ansprechpartner · Monatlicher Trend</div>
+              <div class="chart-sub">WKZ-Volumen je Ansprechpartner über Zeit</div>
+            </div>
+            <div class="chart-actions">
+              <button class="chart-toggle-btn active" id="toggle-avg-line" onclick="toggleAvgLine()">Ø GmbH</button>
+              <button class="chart-maximize-btn" onclick="maximizeChart('contactTrend')" title="Vollbild">⛶</button>
+            </div>
+          </div>
+          <div class="chart-filter-chips" id="contact-chips"></div>
+          <div style="height:220px;"><canvas id="chart-contact-trend"></canvas></div>
+        </div>
+
+        <!-- 4. Ansprechpartner Table (sortable) -->
+        <div class="chart-card">
+          <div class="chart-header">
+            <div>
+              <div class="chart-title">Ansprechpartner-Übersicht</div>
+              <div class="chart-sub">Telefónica: Region und KAM</div>
+            </div>
+          </div>
+          <div id="tef-table"></div>
+        </div>
+
+        <!-- 5. Quartalsübersicht -->
+        <div class="chart-card" style="margin-top:16px;">
+          <div class="chart-header">
+            <div>
+              <div class="chart-title">Quartalsübersicht</div>
+              <div class="chart-sub">WKZ-Ist, Aufteilung nach Ansprechpartner</div>
+            </div>
+            <div class="chart-actions">
+              <button class="chart-maximize-btn" onclick="maximizeChart('quarterBar')" title="Vollbild">⛶</button>
+            </div>
+          </div>
+          <div style="height:200px;margin-bottom:16px;"><canvas id="chart-quarter-bar"></canvas></div>
+          <div id="quartal-table"></div>
+        </div>
+
+        <!-- 6. Jahresübersicht -->
+        <div class="chart-card" style="margin-top:16px;">
+          <div class="chart-title">Jahresübersicht</div>
+          <div class="chart-sub">Aggregierte Kennzahlen pro Jahr</div>
+          <div id="jahres-table"></div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- LIST -->
+    <div id="page-list" class="page">
+      <div class="time-filter" id="list-time-filter" style="margin-bottom:12px;">
+        <div id="list-filter-btns" style="display:contents;"></div>
+        <div class="tf-custom" id="list-custom" style="display:none;">
+          <input type="date" id="list-from" onchange="applyCustomFilter('list')"/>
+          <span style="color:rgba(255,255,255,0.3);font-size:12px;">bis</span>
+          <input type="date" id="list-to" onchange="applyCustomFilter('list')"/>
+        </div>
+      </div>
+      <!-- Cockpit -->
+      <div id="list-cockpit" style="margin-bottom:20px;"></div>
+
+      <div class="page-header">
+        <div>
+          <div class="page-title">Übersicht</div>
+          <div class="page-sub" id="list-count">0 Einträge</div>
+        </div>
+        <button class="btn btn-primary" style="width:auto;" onclick="showPage('form',null);openNew()">+ Neuer WKZ</button>
+      </div>
+      <div class="filter-row">
+        <input type="text" id="filter-q" class="inp" placeholder="Suche…" style="flex:1 1 160px;" oninput="renderList()"/>
+        <select id="filter-status" class="inp" style="width:auto;" onchange="renderList()">
+          <option value="alle">Alle Status</option>
+          <option value="offen">Offen</option>
+          <option value="beantragt">Beantragt</option>
+          <option value="ausgezahlt">Ausgezahlt</option>
+          <option value="abgelehnt">Abgelehnt</option>
+        </select>
+        <select id="filter-partner" class="inp" style="width:auto;" onchange="renderList()">
+          <option value="alle">Alle Partner</option>
+          <option>Telefónica / o2</option>
+          <option>Apple</option>
+          <option>Samsung</option>
+          <option>Huawei</option>
+          <option>Sony</option>
+          <option>Andere</option>
+        </select>
+      </div>
+      <div id="list-entries"></div>
+    </div>
+
+    <!-- FORM -->
+    <div id="page-form" class="page">
+      <div style="max-width:640px;">
+        <h1 id="form-title" style="font-family:'Syne',sans-serif;font-size:24px;font-weight:800;color:#F1F5F9;margin-bottom:24px;letter-spacing:-0.5px;">Neuen WKZ erfassen</h1>
+
+        <div class="form-sec">
+          <div class="form-sec-title">Wer hat das WKZ versprochen?</div>
+          <div class="grid-2">
+            <div class="field">
+              <div class="field-label">Partner *</div>
+              <select id="f-partner" class="inp" onchange="onPartnerChange()">
+                <option>Telefónica / o2</option><option>Apple</option><option>Samsung</option>
+                <option>Huawei</option><option>Sony</option><option>Andere</option>
+              </select>
+            </div>
+            <div class="field" id="f-contact-free-wrap" style="display:none;">
+              <div class="field-label">Ansprechpartner</div>
+              <input type="text" id="f-contact-free" class="inp" placeholder="Name des Ansprechpartners"/>
+            </div>
+          </div>
+          <div id="tef-fields">
+            <div class="field">
+              <div class="field-label">Quelle</div>
+              <div class="radio-row">
+                <label class="radio-label"><input type="radio" name="tef_quelle" value="region" checked onchange="onTefQuelleChange()"> Region</label>
+                <label class="radio-label"><input type="radio" name="tef_quelle" value="kam" onchange="onTefQuelleChange()"> KAM</label>
+              </div>
+            </div>
+            <div class="field">
+              <div class="field-label">Ansprechpartner</div>
+              <select id="f-tef-contact" class="inp"></select>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-sec">
+          <div class="form-sec-title">Art des WKZ</div>
+          <div class="radio-row">
+            <label class="radio-label"><input type="radio" name="wkz_typ" value="premium" checked onchange="onWkzTypChange()"> Premium WKZ</label>
+            <label class="radio-label"><input type="radio" name="wkz_typ" value="durchlaufend" onchange="onWkzTypChange()"> Durchlaufender Posten</label>
+          </div>
+          <div id="durchlaufend-details" style="display:none;">
+            <div class="field">
+              <div class="field-label">Empfänger (an wen wird weitergeleitet?)</div>
+              <input type="text" id="f-empfaenger" class="inp" placeholder="z.B. Händlername, Filiale, Partner…"/>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-sec">
+          <div class="form-sec-title">Wofür wurde es versprochen?</div>
+          <div class="field">
+            <div class="field-label">Verwendungszweck / Maßnahme *</div>
+            <input type="text" id="f-wofuer" class="inp" placeholder="z.B. Q3-Kampagne, Shop-Umbau, Geräte-Promotion…"/>
+          </div>
+          <div class="field">
+            <div class="field-label">Gutschriftsnummer</div>
+            <input type="text" id="f-gutschrift" class="inp" placeholder="z.B. 0284998-19000234"/>
+          </div>
+        </div>
+
+        <div class="form-sec">
+          <div class="form-sec-title">Wie viel und wann?</div>
+          <div class="grid-3">
+            <div class="field"><div class="field-label">Betrag (EUR) *</div><input type="number" id="f-betrag" class="inp" placeholder="20000"/></div>
+            <div class="field"><div class="field-label">Versprochen am</div><input type="date" id="f-datum" class="inp"/></div>
+            <div class="field"><div class="field-label">Zahlung erwartet bis</div><input type="date" id="f-zahlung" class="inp"/></div>
+          </div>
+        </div>
+
+        <div class="form-sec">
+          <div class="form-sec-title">Gibt es Bedingungen für die Auszahlung?</div>
+          <div class="radio-row">
+            <label class="radio-label"><input type="radio" name="bed" value="nein" checked onchange="onBedChange()"> Nein, bedingungslos</label>
+            <label class="radio-label"><input type="radio" name="bed" value="ja" onchange="onBedChange()"> Ja, mit Bedingungen</label>
+          </div>
+          <div id="bed-details" style="display:none;">
+            <div class="field">
+              <div class="field-label">Beschreibung der Bedingungen</div>
+              <textarea id="f-bedingungen" class="inp" rows="3" placeholder="z.B. Mindestabsatz 200 Geräte…"></textarea>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-sec">
+          <div class="form-sec-title">Verwaltung</div>
+          <div class="grid-2">
+            <div class="field">
+              <div class="field-label">Status</div>
+              <select id="f-status" class="inp">
+                <option value="offen">Offen</option><option value="beantragt">Beantragt</option>
+                <option value="ausgezahlt">Ausgezahlt</option><option value="abgelehnt">Abgelehnt</option>
+              </select>
+            </div>
+            <div class="field">
+              <div class="field-label">Erfasst von</div>
+              <select id="f-erfasst" class="inp">
+                <option>VL (Sven)</option><option>Nico</option><option>Lars</option><option>Andreas</option>
+              </select>
+            </div>
+          </div>
+          <div class="field">
+            <div class="field-label">Interne Notizen</div>
+            <textarea id="f-notizen" class="inp" rows="2" placeholder="Optionale Anmerkungen…"></textarea>
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button class="btn btn-primary" id="form-submit-btn" onclick="submitForm()" style="flex:1;">WKZ erfassen</button>
+          <button class="btn btn-ghost" onclick="showPage('list',null)">Abbrechen</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- DETAIL -->
+    <div id="page-detail" class="page">
+      <div style="max-width:640px;">
+        <div class="detail-header">
+          <button class="btn btn-ghost btn-sm" onclick="showPage('list',null)">← Zurück</button>
+          <div style="flex:1;"></div>
+          <button class="btn btn-ghost btn-sm" id="detail-edit-btn" onclick="openEdit()">Bearbeiten</button>
+          <button class="btn btn-danger btn-sm" id="detail-delete-btn" onclick="deleteEntry()">Löschen</button>
+        </div>
+        <div class="detail-card">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;">
+            <div>
+              <div id="detail-pills" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;"></div>
+              <div class="detail-amount" id="detail-amount"></div>
+              <div class="detail-partner" id="detail-partner"></div>
+            </div>
+            <div class="detail-meta" id="detail-meta"></div>
+          </div>
+          <div id="detail-rows"></div>
+        </div>
+        <div class="status-changer">
+          <div class="status-changer-title">Status ändern</div>
+          <div class="status-btns" id="status-btns"></div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- ── CHART MAXIMIZE OVERLAY ──────────────────────────────────────────── -->
+<div class="chart-overlay" id="chart-overlay">
+  <div class="chart-overlay-inner">
+    <button class="chart-overlay-close" onclick="closeOverlay()">✕</button>
+    <div class="chart-overlay-title" id="overlay-title"></div>
+    <div class="chart-overlay-sub" id="overlay-sub"></div>
+    <div class="chart-overlay-canvas"><canvas id="overlay-canvas"></canvas></div>
+  </div>
+</div>
+
+<!-- ── TOAST ────────────────────────────────────────────────────────────── -->
+<div id="toast"></div>
+
+<script>
+// ── Config ──────────────────────────────────────────────────────────────────
+const DBX_APP_KEY  = "m61slhtvoknbwby";
+const DBX_REDIRECT = "https://premiumbic.github.io/wkz-app/callback.html";
+const DBX_FILE     = "/WKZ-App/wkz_eintraege.json";
+const DBX_FOLDER   = "/WKZ-App";
+const DBX_TOKEN_URL = "https://api.dropboxapi.com/oauth2/token";
+
+const TEF_CONTACTS = {
+  region: ["Frank Lorenz","Maik Balatka","Alexander Lein"],
+  kam:    ["Fichtl"],
+};
+
+const STATUS_CONFIG = {
+  offen:      { label:"Offen",      color:"#F59E0B", bg:"rgba(245,158,11,0.13)"  },
+  beantragt:  { label:"Beantragt",  color:"#60A5FA", bg:"rgba(96,165,250,0.13)"  },
+  ausgezahlt: { label:"Ausgezahlt", color:"#34D399", bg:"rgba(52,211,153,0.13)"  },
+  abgelehnt:  { label:"Abgelehnt",  color:"#F87171", bg:"rgba(248,113,113,0.13)" },
+};
+
+const CONTACT_COLORS = {
+  'Frank Lorenz':  '#60A5FA',
+  'Maik Balatka':  '#A78BFA',
+  'Alexander Lein':'#34D399',
+  'Fichtl':  '#F59E0B',
+};
+
+// ── Team Namespace (resolved at boot) ────────────────────────────────────────
+let teamRootNS  = null;   // set after first auth — used as Dropbox-API-Path-Root
+
+async function resolveTeamNamespace(token) {
+  // Already resolved?
+  if (teamRootNS) return;
+  try {
+    const r = await fetch("https://api.dropboxapi.com/2/users/get_current_account", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    if (!r.ok) return;
+    const acct = await r.json();
+    // Business accounts have root_info.root_namespace_id
+    const rootNS = acct?.root_info?.root_namespace_id;
+    if (rootNS) {
+      teamRootNS = rootNS;
+      console.log("[WKZ] Team root namespace:", rootNS);
+    }
+  } catch (e) { console.warn("[WKZ] Could not resolve namespace:", e); }
+}
+
+function dbxHeaders(token, extra) {
+  const h = { Authorization: `Bearer ${token}`, ...extra };
+  if (teamRootNS) {
+    h["Dropbox-API-Path-Root"] = JSON.stringify({".tag": "root", "root": teamRootNS});
+  }
+  return h;
+}
+
+// ── State ────────────────────────────────────────────────────────────────────
+let entries     = [];
+let currentId   = null;
+let chartObjs   = {};
+let monthlyMode = 'bar';
+let showAvgLine = true;
+let hideSteuerbuero = true; // Default: Steuerbüro-Einträge ausblenden
+let activeContacts = new Set();
+let overlayChart = null;
+let tefSortCol = null;
+let tefSortAsc = true;
+
+// ── LS helpers ───────────────────────────────────────────────────────────────
+const LS = {
+  get: k => { try { return localStorage.getItem(k); } catch { return null; } },
+  set: (k,v) => { try { localStorage.setItem(k,v); } catch {} },
+  del: k => { try { localStorage.removeItem(k); } catch {} },
+  getJSON: k => { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } },
+  setJSON: (k,v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
+};
+
+// ── PKCE helpers ─────────────────────────────────────────────────────────────
+function generateCodeVerifier() {
+  const arr = new Uint8Array(48);
+  crypto.getRandomValues(arr);
+  return btoa(String.fromCharCode(...arr))
+    .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+async function generateCodeChallenge(verifier) {
+  const data = new TextEncoder().encode(verifier);
+  const digest = await crypto.subtle.digest('SHA-256', data);
+  return btoa(String.fromCharCode(...new Uint8Array(digest)))
+    .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+// ── Token management ─────────────────────────────────────────────────────────
+// Stores: wkz_token_data = { access_token, refresh_token, expires_at }
+function getTokenData() {
+  return LS.getJSON('wkz_token_data');
+}
+
+function setTokenData(data) {
+  LS.setJSON('wkz_token_data', data);
+  // Also keep wkz_token for backward compat
+  if (data?.access_token) LS.set('wkz_token', data.access_token);
+}
+
+function isTokenExpired() {
+  const td = getTokenData();
+  if (!td?.expires_at) return true;
+  // Refresh 5 minutes before expiry
+  return Date.now() > (td.expires_at - 5 * 60 * 1000);
+}
+
+async function refreshAccessToken() {
+  const td = getTokenData();
+  if (!td?.refresh_token) return false;
+  try {
+    const body = new URLSearchParams({
+      grant_type: 'refresh_token',
+      refresh_token: td.refresh_token,
+      client_id: DBX_APP_KEY,
+    });
+    const r = await fetch(DBX_TOKEN_URL, { method: 'POST', body });
+    if (!r.ok) return false;
+    const data = await r.json();
+    setTokenData({
+      access_token: data.access_token,
+      refresh_token: td.refresh_token, // refresh_token stays the same
+      expires_at: Date.now() + (data.expires_in * 1000),
+    });
+    return true;
+  } catch { return false; }
+}
+
+async function getValidToken() {
+  const td = getTokenData();
+  if (!td?.access_token) return null;
+  if (td.refresh_token && isTokenExpired()) {
+    const ok = await refreshAccessToken();
+    if (!ok) return null;
+    return getTokenData().access_token;
+  }
+  return td.access_token;
+}
+
+// Exchange authorization code for tokens (PKCE flow)
+async function exchangeCodeForTokens(code, codeVerifier) {
+  const body = new URLSearchParams({
+    grant_type: 'authorization_code',
+    code: code,
+    client_id: DBX_APP_KEY,
+    redirect_uri: DBX_REDIRECT,
+    code_verifier: codeVerifier,
+  });
+  const r = await fetch(DBX_TOKEN_URL, { method: 'POST', body });
+  if (!r.ok) throw new Error('Token exchange failed');
+  const data = await r.json();
+  setTokenData({
+    access_token: data.access_token,
+    refresh_token: data.refresh_token || null,
+    expires_at: Date.now() + (data.expires_in * 1000),
+  });
+  return data;
+}
+
+// ── Format helpers ────────────────────────────────────────────────────────────
+function fmtEur(v, short) {
+  if (!Number(v)) return "–";
+  if (short && Number(v) >= 1000) return `${(Number(v)/1000).toFixed(1).replace(".",",")} T€`;
+  return new Intl.NumberFormat("de-DE",{style:"currency",currency:"EUR"}).format(Number(v));
+}
+function fmtDate(d) { return d ? new Date(d).toLocaleDateString("de-DE") : "–"; }
+function fmtMonth(d) {
+  if (!d) return null;
+  return new Date(d).toLocaleDateString("de-DE",{month:"short",year:"2-digit"});
+}
+function fmtMonthKey(d) {
+  if (!d) return null;
+  const dt = new Date(d);
+  return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}`;
+}
+function fmtMonthLabel(key) {
+  const [y,m] = key.split('-');
+  const months = ['Jan','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez'];
+  return `${months[parseInt(m)-1]} ${y.slice(2)}`;
+}
+function uid() { return Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
+
+// ── Hash ─────────────────────────────────────────────────────────────────────
+async function hashPw(pw) {
+  const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(pw+"wkz_salt_pc"));
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,"0")).join("");
+}
+
+// ── Screen management ────────────────────────────────────────────────────────
+function showScreen(id) {
+  document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
+  document.getElementById("screen-"+id).classList.add("active");
+}
+
+function showPage(id, btn) {
+  document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
+  document.getElementById("page-"+id).classList.add("active");
+  document.querySelectorAll(".nav-btn").forEach(b=>b.classList.remove("active"));
+  if (btn) btn.classList.add("active");
+  if (id==="dashboard") renderDashboard();
+  if (id==="list") renderList();
+  if (id==="charts") renderCharts();
+}
+
+// ── Toast ────────────────────────────────────────────────────────────────────
+function showToast(msg, err) {
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.style.display = "block";
+  t.style.background = err ? "#3D0B0B" : "#0B3D1F";
+  t.style.border = `1px solid ${err?"#F87171":"#34D399"}`;
+  t.style.color = err ? "#F87171" : "#34D399";
+  setTimeout(()=>t.style.display="none", 3000);
+}
+
+// ── Boot ─────────────────────────────────────────────────────────────────────
+window.addEventListener("load", () => {
+  const td   = getTokenData();
+  const hash = LS.get("wkz_pw_hash");
+  // Check both new token_data and legacy wkz_token
+  const hasToken = td?.access_token || LS.get("wkz_token");
+  if (!hasToken || !hash) { showScreen("setup"); return; }
+  // Migrate legacy token to new format if needed
+  if (!td && LS.get("wkz_token")) {
+    setTokenData({ access_token: LS.get("wkz_token"), refresh_token: null, expires_at: 0 });
+  }
+  showScreen("password");
+  setTimeout(()=>document.getElementById("pw-login").focus(),100);
+});
+
+// Listen for OAuth callback from popup
+window.addEventListener("message", e => {
+  if (e.data?.type === "DBX_AUTH_CODE") {
+    // PKCE flow: received authorization code from callback
+    handleAuthCode(e.data.code);
+  } else if (e.data?.type === "DBX_TOKEN") {
+    // Legacy: direct token (backward compat with old callback.html)
+    document.getElementById("token-input").value = e.data.token;
+    setTimeout(() => validateToken(), 600);
+  }
+});
+
+// Close overlay on Escape
+window.addEventListener("keydown", e => {
+  if (e.key === "Escape") closeOverlay();
+});
+
+// ── Setup ────────────────────────────────────────────────────────────────────
+async function openDropboxAuth() {
+  // PKCE flow: generate verifier + challenge, open auth URL with code flow
+  const verifier = generateCodeVerifier();
+  LS.set('wkz_pkce_verifier', verifier);
+  const challenge = await generateCodeChallenge(verifier);
+  const params = new URLSearchParams({
+    client_id: DBX_APP_KEY,
+    redirect_uri: DBX_REDIRECT,
+    response_type: 'code',
+    code_challenge: challenge,
+    code_challenge_method: 'S256',
+    token_access_type: 'offline',  // ← this gives us a refresh_token!
+  });
+  const url = `https://www.dropbox.com/oauth2/authorize?${params}`;
+  window.open(url, "dbx", "width=600,height=700,left=200,top=100");
+}
+
+async function validateToken() {
+  const tokenInput = document.getElementById("token-input").value.trim();
+  const errEl = document.getElementById("setup-err");
+  const btn   = document.getElementById("token-next-btn");
+  if (!tokenInput) { errEl.textContent="Bitte Token eingeben."; errEl.style.display="block"; return; }
+  btn.disabled = true; btn.textContent = "Wird geprüft…";
+  errEl.style.display = "none";
+  try {
+    // Check if this is a manual short-lived token (starts with sl.)
+    const r = await fetch("https://api.dropboxapi.com/2/users/get_current_account",{method:"POST",headers:{Authorization:`Bearer ${tokenInput}`}});
+    if (!r.ok) throw new Error();
+    // Manual token works — store it (no refresh token available)
+    setTokenData({
+      access_token: tokenInput,
+      refresh_token: null,
+      expires_at: Date.now() + (4 * 60 * 60 * 1000), // ~4h for manual tokens
+    });
+    goToStep2();
+  } catch {
+    errEl.textContent = "Token ungültig. Bitte prüfen und erneut versuchen.";
+    errEl.style.display = "block";
+  }
+  btn.disabled = false; btn.textContent = "Weiter →";
+}
+
+// Handle PKCE code from callback
+async function handleAuthCode(code) {
+  const errEl = document.getElementById("setup-err");
+  const btn   = document.getElementById("token-next-btn");
+  btn.disabled = true; btn.textContent = "Token wird geholt…";
+  errEl.style.display = "none";
+  try {
+    const verifier = LS.get('wkz_pkce_verifier');
+    if (!verifier) throw new Error('No PKCE verifier found');
+    await exchangeCodeForTokens(code, verifier);
+    LS.del('wkz_pkce_verifier');
+    const td = getTokenData();
+    document.getElementById("token-input").value = td.refresh_token
+      ? "✓ Refresh Token erhalten (automatische Erneuerung aktiv)"
+      : td.access_token.substring(0, 20) + "…";
+    goToStep2();
+  } catch (e) {
+    errEl.textContent = "Token-Austausch fehlgeschlagen: " + e.message;
+    errEl.style.display = "block";
+  }
+  btn.disabled = false; btn.textContent = "Weiter →";
+}
+
+function goToStep2() {
+  document.getElementById("setup-step1").style.display = "none";
+  document.getElementById("setup-step2").style.display = "block";
+  document.getElementById("prog2").classList.add("done");
+}
+
+async function savePassword() {
+  const pw  = document.getElementById("pw-input").value;
+  const pw2 = document.getElementById("pw-confirm").value;
+  const err = document.getElementById("pw-err");
+  const btn = document.getElementById("pw-save-btn");
+  if (pw.length < 4) { err.textContent="Mindestens 4 Zeichen."; err.style.display="block"; return; }
+  if (pw !== pw2)    { err.textContent="Passwörter stimmen nicht überein."; err.style.display="block"; return; }
+  btn.disabled=true; btn.textContent="Wird gespeichert…";
+  const hash = await hashPw(pw);
+  // Token data is already stored by validateToken/handleAuthCode
+  LS.set("wkz_pw_hash", hash);
+  await enterApp();
+}
+
+// ── Login ────────────────────────────────────────────────────────────────────
+async function doLogin() {
+  const pw  = document.getElementById("pw-login").value;
+  const err = document.getElementById("login-err");
+  const btn = document.getElementById("login-btn");
+  if (!pw) { err.textContent="Bitte Passwort eingeben."; err.style.display="block"; return; }
+  btn.disabled=true; btn.textContent="…";
+  const hash   = await hashPw(pw);
+  const stored = LS.get("wkz_pw_hash");
+  if (hash !== stored) {
+    err.textContent="Falsches Passwort."; err.style.display="block";
+    btn.disabled=false; btn.textContent="Anmelden →"; return;
+  }
+  await enterApp();
+}
+
+async function enterApp() {
+  showScreen("app");
+  document.getElementById("nav-user").textContent = "Lade…";
+  const token = await getValidToken();
+  if (!token) {
+    showToast("Token abgelaufen. Bitte neu verbinden.", true);
+    resetSetup();
+    return;
+  }
+  // Resolve team namespace on first call
+  await resolveTeamNamespace(token);
+  try {
+    const r = await fetch("https://content.dropboxapi.com/2/files/download",{
+      method:"POST",
+      headers: dbxHeaders(token, { "Dropbox-API-Arg": JSON.stringify({path:DBX_FILE}) })
+    });
+    if (r.status===401) {
+      const ok = await refreshAccessToken();
+      if (ok) { return enterApp(); }
+      showToast("Dropbox-Zugang abgelaufen. Bitte neu verbinden.", true);
+      resetSetup(); return;
+    }
+    if (r.status===409||r.status===404) { entries=[]; }
+    else { try { entries = await r.json(); if(!Array.isArray(entries)) entries=[]; } catch { entries=[]; } }
+  } catch { entries=[]; }
+  const td = getTokenData();
+  document.getElementById("nav-user").textContent = td?.refresh_token ? "🔄 Auto-Token" : "";
+  buildFilterButtons();
+  renderDashboard();
+  showPage("dashboard", document.querySelector(".nav-btn"));
+}
+
+function resetSetup() {
+  LS.del("wkz_token"); LS.del("wkz_pw_hash"); LS.del("wkz_token_temp");
+  LS.del("wkz_token_data"); LS.del("wkz_pkce_verifier");
+  document.getElementById("token-input").value="";
+  document.getElementById("pw-input").value="";
+  document.getElementById("pw-confirm").value="";
+  document.getElementById("pw-login").value="";
+  document.getElementById("setup-step1").style.display="block";
+  document.getElementById("setup-step2").style.display="none";
+  document.getElementById("prog2").classList.remove("done");
+  showScreen("setup");
+}
+
+// ── Dropbox write ─────────────────────────────────────────────────────────────
+async function saveEntries(updated) {
+  const token = await getValidToken();
+  if (!token) { showToast("Token abgelaufen. Bitte neu verbinden.", true); return false; }
+  await resolveTeamNamespace(token);
+  try {
+    await fetch("https://api.dropboxapi.com/2/files/create_folder_v2",{
+      method:"POST", headers: dbxHeaders(token, {"Content-Type":"application/json"}),
+      body:JSON.stringify({path:DBX_FOLDER,autorename:false})
+    });
+  } catch {}
+  const r = await fetch("https://content.dropboxapi.com/2/files/upload",{
+    method:"POST",
+    headers: dbxHeaders(token, {
+      "Content-Type":"application/octet-stream",
+      "Dropbox-API-Arg":JSON.stringify({path:DBX_FILE,mode:"overwrite",mute:true})
+    }),
+    body: JSON.stringify(updated,null,2)
+  });
+  if (r.status === 401) {
+    // Try refresh and retry once
+    const ok = await refreshAccessToken();
+    if (ok) return saveEntries(updated);
+    showToast("Token abgelaufen. Bitte neu verbinden.", true); return false;
+  }
+  if (r.ok) { entries=updated; buildFilterButtons(); showToast("Gespeichert ✓"); return true; }
+  showToast("Fehler beim Speichern!", true); return false;
+}
+
+// ── Status pill HTML ──────────────────────────────────────────────────────────
+function statusPillHtml(status) {
+  const s = STATUS_CONFIG[status]||{label:status,color:"#888",bg:"rgba(128,128,128,0.1)"};
+  return `<span class="status-pill" style="background:${s.bg};color:${s.color};border:1px solid ${s.color}40;">
+    <span class="status-dot" style="background:${s.color};"></span>${s.label}</span>`;
+}
+
+// ── Entry row HTML ────────────────────────────────────────────────────────────
+function entryRowHtml(e) {
+  const badge = e.tef_quelle && e.partner==="Telefónica / o2"
+    ? `<span class="badge ${e.tef_quelle==='region'?'badge-region':'badge-kam'}">${e.tef_quelle==='region'?'Region':'KAM'}</span>` : "";
+  const warn = e.hat_bedingungen==="ja" ? `<span class="warn-badge">⚠ Bedingungen</span>` : "";
+  const dlBadge = e.wkz_typ==="durchlaufend" ? `<span class="badge" style="background:rgba(168,85,247,0.15);color:#C084FC;border-color:rgba(168,85,247,0.3);">↔ Durchlaufend</span>` : "";
+  const stbBadge = e.quelle==="steuerbuero" ? `<span class="badge" style="background:rgba(96,165,250,0.12);color:#60A5FA;border-color:rgba(96,165,250,0.25);">📁 Steuerbüro</span>` : "";
+  return `<div class="entry-row" onclick="openDetail('${e.id}')">
+    <div class="entry-row-left">
+      ${statusPillHtml(e.status)}
+      <div>
+        <div class="entry-name">${e.partner}${e.ansprechpartner?`<span class="entry-contact"> · ${e.ansprechpartner}</span>`:""}${badge}${dlBadge}${stbBadge}</div>
+        <div class="entry-desc">${e.wofuer||""}${warn}</div>
+      </div>
+    </div>
+    <div class="entry-amount">${fmtEur(e.betrag)}</div>
+  </div>`;
+}
+
+// ── Dashboard ─────────────────────────────────────────────────────────────────
+function renderDashboard() {
+  const fe = getFilteredEntries('dash');
+  document.getElementById('dash-period-label').textContent = getPeriodLabel('dash');
+  const sumBy = fn => fe.filter(fn).reduce((s,e)=>s+(Number(e.betrag)||0),0);
+  document.getElementById("kpi-ausstehend").textContent = fmtEur(sumBy(e=>e.status!=="ausgezahlt"&&e.status!=="abgelehnt"));
+  document.getElementById("kpi-ausgezahlt").textContent = fmtEur(sumBy(e=>e.status==="ausgezahlt"));
+  document.getElementById("kpi-gesamt").textContent = fe.length;
+  ["offen","beantragt","ausgezahlt","abgelehnt"].forEach(k=>{
+    document.getElementById("cnt-"+k).textContent = fe.filter(e=>e.status===k).length;
+  });
+  const el = document.getElementById("dashboard-list");
+  if (!fe.length) { el.innerHTML=`<div class="empty"><div class="empty-icon">📭</div><div class="empty-text">Keine Einträge im gewählten Zeitraum.</div></div>`; return; }
+  el.innerHTML = fe.slice(0,6).map(entryRowHtml).join("");
+}
+
+// ── List ──────────────────────────────────────────────────────────────────────
+function renderList() {
+  const q  = document.getElementById("filter-q").value.toLowerCase();
+  const st = document.getElementById("filter-status").value;
+  const pt = document.getElementById("filter-partner").value;
+  const base = getFilteredEntries('list');
+  renderCockpit(base);
+  const filtered = base.filter(e=>{
+    if (st!=="alle"&&e.status!==st) return false;
+    if (pt!=="alle"&&e.partner!==pt) return false;
+    if (q&&!`${e.partner} ${e.wofuer} ${e.ansprechpartner} ${e.gutschrift||''}`.toLowerCase().includes(q)) return false;
+    return true;
+  });
+  document.getElementById("list-count").textContent = `${filtered.length} Einträge`;
+  const el = document.getElementById("list-entries");
+  if (!filtered.length) { el.innerHTML=`<div class="empty"><div class="empty-icon">📭</div><div class="empty-text">Keine Einträge gefunden.</div></div>`; return; }
+  el.innerHTML = filtered.map(entryRowHtml).join("");
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ── ENHANCED CHARTS ──────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════════════════
+
+function renderCharts() {
+  const fe = getFilteredEntries('charts');
+  document.getElementById('charts-period-label').textContent = getPeriodLabel('charts');
+  if (!entries.length) {
+    document.getElementById("charts-empty").style.display="block";
+    document.getElementById("charts-content").style.display="none";
+    return;
+  }
+  document.getElementById("charts-empty").style.display="none";
+  document.getElementById("charts-content").style.display="block";
+
+  // Destroy old charts
+  Object.values(chartObjs).forEach(c=>c.destroy());
+  chartObjs={};
+
+  // ── KPI Summary Row ──
+  renderChartsKPI(fe);
+
+  // ── 1. Monthly chart (bar/line/cumulative) ──
+  renderMonthlyChart(fe);
+
+  // ── 2. Region vs KAM donut ──
+  renderQuelleDonut(fe);
+
+  // ── 3. Region vs KAM detail table ──
+  renderQuelleTable(fe);
+
+  // ── 4. Contact trend line chart ──
+  renderContactTrend(fe);
+
+  // ── 5. TEF table (sortable) ──
+  renderTefTable(fe);
+
+  // ── 6. Quarter stacked bar + table ──
+  renderQuarterBarChart(fe);
+  renderQuartalTable(fe, 'quartal-table');
+
+  // ── 7. Jahres table ──
+  renderJahresTable(fe, 'jahres-table');
+}
+
+// ── Charts KPI Summary ──
+function renderChartsKPI(fe) {
+  const el = document.getElementById('charts-kpi-row');
+  const total = fe.reduce((s,e)=>s+(Number(e.betrag)||0),0);
+  const ausgezahlt = fe.filter(e=>e.status==='ausgezahlt').reduce((s,e)=>s+(Number(e.betrag)||0),0);
+  const ausstehend = fe.filter(e=>e.status!=='ausgezahlt'&&e.status!=='abgelehnt').reduce((s,e)=>s+(Number(e.betrag)||0),0);
+  const bedCount = fe.filter(e=>e.hat_bedingungen==='ja').length;
+  const auszRate = total ? ((ausgezahlt/total)*100).toFixed(1) : '0';
+  const fK = v => {
+    if (!v) return '–';
+    if (v >= 1000000) return (v/1000000).toFixed(2).replace('.',',') + ' Mio €';
+    if (v >= 1000) return (v/1000).toFixed(1).replace('.',',') + ' T€';
+    return fmtEur(v);
+  };
+  el.innerHTML = `
+    <div class="charts-kpi">
+      <div class="charts-kpi-label">Gesamtvolumen</div>
+      <div class="charts-kpi-value" style="color:#F1F5F9;">${fK(total)}</div>
+      <div class="charts-kpi-sub">${fe.length} Transaktionen</div>
+    </div>
+    <div class="charts-kpi">
+      <div class="charts-kpi-label">Ausgezahlt</div>
+      <div class="charts-kpi-value" style="color:#34D399;">${fK(ausgezahlt)}</div>
+      <div class="charts-kpi-sub">Quote: ${auszRate}%</div>
+    </div>
+    <div class="charts-kpi">
+      <div class="charts-kpi-label">Ausstehend</div>
+      <div class="charts-kpi-value" style="color:#F59E0B;">${fK(ausstehend)}</div>
+      <div class="charts-kpi-sub">offen + beantragt</div>
+    </div>
+    <div class="charts-kpi">
+      <div class="charts-kpi-label">Mit Bedingungen</div>
+      <div class="charts-kpi-value" style="color:#A78BFA;">${bedCount}</div>
+      <div class="charts-kpi-sub">von ${fe.length} Einträgen</div>
+    </div>
+  `;
+}
+
+// ── Monthly chart with mode switching ──
+function getMonthlyData(fe) {
+  const monthMap = {};
+  fe.forEach(e => {
+    const key = fmtMonthKey(e.zahlungsziel || e.versprochenes_datum);
+    if (!key) return;
+    if (!monthMap[key]) monthMap[key] = { key, ausgezahlt:0, ausstehend:0, total:0 };
+    const b = Number(e.betrag) || 0;
+    if (e.status === 'ausgezahlt') monthMap[key].ausgezahlt += b;
+    else if (e.status !== 'abgelehnt') monthMap[key].ausstehend += b;
+    monthMap[key].total += b;
+  });
+  return Object.values(monthMap).sort((a,b) => a.key.localeCompare(b.key));
+}
+
+function renderMonthlyChart(fe) {
+  const months = getMonthlyData(fe);
+  if (!months.length) return;
+  const labels = months.map(m => fmtMonthLabel(m.key));
+  const ctx = document.getElementById("chart-monthly");
+
+  // Update toggle buttons
+  ['bar','line','cumulative'].forEach(m => {
+    const btn = document.getElementById('chart-monthly-mode-'+m);
+    if (btn) btn.classList.toggle('active', monthlyMode === m);
+  });
+
+  let config;
+  if (monthlyMode === 'bar') {
+    config = {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [
+          { label:'Ausgezahlt', data:months.map(m=>m.ausgezahlt), backgroundColor:'#34D399', borderRadius:4, borderSkipped:false },
+          { label:'Ausstehend', data:months.map(m=>m.ausstehend), backgroundColor:'#60A5FA', borderRadius:4, borderSkipped:false },
+        ]
+      },
+      options: {
+        responsive:true, maintainAspectRatio:false,
+        interaction: { mode:'index', intersect:false },
+        plugins: {
+          legend: { position:'bottom', labels: { color:'rgba(255,255,255,0.5)', font:{size:11}, boxWidth:10 } },
+          tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${fmtEur(ctx.raw)}` } }
+        },
+        scales: {
+          x: { stacked:true, ticks:{color:'rgba(255,255,255,0.35)',font:{size:10},maxRotation:45}, grid:{display:false}, border:{display:false} },
+          y: { stacked:true, ticks:{color:'rgba(255,255,255,0.25)',font:{size:10},callback:v=>fmtEur(v,true)}, grid:{color:'rgba(255,255,255,0.05)'}, border:{display:false} },
+        }
+      }
+    };
+  } else if (monthlyMode === 'line') {
+    config = {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [
+          {
+            label:'Ausgezahlt', data:months.map(m=>m.ausgezahlt),
+            borderColor:'#34D399', backgroundColor:'rgba(52,211,153,0.1)',
+            borderWidth:2, fill:true, tension:0.3, pointRadius:3, pointBackgroundColor:'#34D399'
+          },
+          {
+            label:'Ausstehend', data:months.map(m=>m.ausstehend),
+            borderColor:'#60A5FA', backgroundColor:'rgba(96,165,250,0.1)',
+            borderWidth:2, fill:true, tension:0.3, pointRadius:3, pointBackgroundColor:'#60A5FA'
+          }
+        ]
+      },
+      options: {
+        responsive:true, maintainAspectRatio:false,
+        interaction: { mode:'index', intersect:false },
+        plugins: {
+          legend: { position:'bottom', labels: { color:'rgba(255,255,255,0.5)', font:{size:11}, boxWidth:10 } },
+          tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${fmtEur(ctx.raw)}` } }
+        },
+        scales: {
+          x: { ticks:{color:'rgba(255,255,255,0.35)',font:{size:10},maxRotation:45}, grid:{display:false}, border:{display:false} },
+          y: { beginAtZero:true, ticks:{color:'rgba(255,255,255,0.25)',font:{size:10},callback:v=>fmtEur(v,true)}, grid:{color:'rgba(255,255,255,0.05)'}, border:{display:false} },
+        }
+      }
+    };
+  } else {
+    // Cumulative
+    let cumAusgezahlt = 0, cumAusstehend = 0;
+    const cumAuszData = months.map(m => { cumAusgezahlt += m.ausgezahlt; return cumAusgezahlt; });
+    const cumAussData = months.map(m => { cumAusstehend += m.ausstehend; return cumAusstehend; });
+    config = {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [
+          {
+            label:'Ausgezahlt (kum.)', data:cumAuszData,
+            borderColor:'#34D399', backgroundColor:'rgba(52,211,153,0.08)',
+            borderWidth:2.5, fill:true, tension:0.3, pointRadius:2, pointBackgroundColor:'#34D399'
+          },
+          {
+            label:'Ausstehend (kum.)', data:cumAussData,
+            borderColor:'#60A5FA', backgroundColor:'rgba(96,165,250,0.08)',
+            borderWidth:2.5, fill:true, tension:0.3, pointRadius:2, pointBackgroundColor:'#60A5FA'
+          },
+          {
+            label:'Ø monatlich', data: months.map((_,i) => (cumAusgezahlt + cumAusstehend) / months.length),
+            borderColor:'#F59E0B', borderWidth:1.5, borderDash:[6,3],
+            fill:false, pointRadius:0, tension:0
+          }
+        ]
+      },
+      options: {
+        responsive:true, maintainAspectRatio:false,
+        interaction: { mode:'index', intersect:false },
+        plugins: {
+          legend: { position:'bottom', labels: { color:'rgba(255,255,255,0.5)', font:{size:11}, boxWidth:10 } },
+          tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${fmtEur(ctx.raw)}` } }
+        },
+        scales: {
+          x: { ticks:{color:'rgba(255,255,255,0.35)',font:{size:10},maxRotation:45}, grid:{display:false}, border:{display:false} },
+          y: { beginAtZero:true, ticks:{color:'rgba(255,255,255,0.25)',font:{size:10},callback:v=>fmtEur(v,true)}, grid:{color:'rgba(255,255,255,0.05)'}, border:{display:false} },
+        }
+      }
+    };
+  }
+  chartObjs.monthly = new Chart(ctx, config);
+}
+
+function setMonthlyMode(mode) {
+  monthlyMode = mode;
+  renderCharts();
+}
+
+// ── Region vs KAM Doughnut ──
+function renderQuelleDonut(fe) {
+  let regionSum = 0, kamSum = 0, unbekannt = 0;
+  fe.forEach(e => {
+    const b = Number(e.betrag) || 0;
+    if (e.tef_quelle === 'region') regionSum += b;
+    else if (e.tef_quelle === 'kam') kamSum += b;
+    else unbekannt += b;
+  });
+  const quelleData = [
+    { label: 'Region', value: regionSum, color: '#60A5FA' },
+    { label: 'KAM', value: kamSum, color: '#A78BFA' },
+  ];
+  if (unbekannt > 0) quelleData.push({ label: 'Nicht zugeordnet', value: unbekannt, color: 'rgba(255,255,255,0.15)' });
+  const filtered = quelleData.filter(d => d.value > 0);
+
+  chartObjs.quelleDonut = new Chart(document.getElementById("chart-quelle-donut"), {
+    type: 'doughnut',
+    data: {
+      labels: filtered.map(d => d.label),
+      datasets: [{
+        data: filtered.map(d => d.value),
+        backgroundColor: filtered.map(d => d.color),
+        borderWidth: 0, hoverOffset: 6
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false, cutout: '62%',
+      plugins: {
+        legend: { position: 'bottom', labels: { color: 'rgba(255,255,255,0.5)', font: { size: 11 }, boxWidth: 10, padding: 12 } },
+        tooltip: { callbacks: { label: ctx => `${ctx.label}: ${fmtEur(ctx.raw)}` } }
+      }
+    }
+  });
+}
+
+// ── Region vs KAM Table ──
+function renderQuelleTable(fe) {
+  const qMap = {};
+  fe.forEach(e => {
+    const d = e.zahlungsziel || e.versprochenes_datum;
+    const q = getQuartalFromDate(d);
+    if (!q) return;
+    if (!qMap[q]) qMap[q] = { quartal: q, region: 0, kam: 0, andere: 0, gesamt: 0 };
+    const b = Number(e.betrag) || 0;
+    qMap[q].gesamt += b;
+    if (e.tef_quelle === 'region') qMap[q].region += b;
+    else if (e.tef_quelle === 'kam') qMap[q].kam += b;
+    else qMap[q].andere += b;
+  });
+
+  const rows = Object.values(qMap).sort((a, b) => a.quartal.localeCompare(b.quartal));
+  const totals = rows.reduce((t, r) => ({ region: t.region + r.region, kam: t.kam + r.kam, andere: t.andere + r.andere, gesamt: t.gesamt + r.gesamt }), { region: 0, kam: 0, andere: 0, gesamt: 0 });
+  const fmt = v => v ? new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(v) : '–';
+  const pct = (v, t) => t ? `${((v / t) * 100).toFixed(1)}%` : '–';
+
+  const el = document.getElementById("quelle-table");
+  if (!rows.length) { el.innerHTML = '<div style="text-align:center;padding:24px;font-size:12px;color:rgba(255,255,255,0.2);">Keine Daten.</div>'; return; }
+
+  let tbl = `<table class="q-table"><thead><tr>
+    <th>Quartal</th><th>Gesamt</th>
+    <th style="color:#60A5FA">Region</th><th>%</th>
+    <th style="color:#A78BFA">KAM</th><th>%</th>
+  </tr></thead><tbody>`;
+  rows.forEach(r => {
+    tbl += `<tr>
+      <td>${r.quartal}</td><td>${fmt(r.gesamt)}</td>
+      <td style="color:#60A5FA">${fmt(r.region)}</td><td style="color:rgba(255,255,255,0.4)">${pct(r.region, r.gesamt)}</td>
+      <td style="color:#A78BFA">${fmt(r.kam)}</td><td style="color:rgba(255,255,255,0.4)">${pct(r.kam, r.gesamt)}</td>
+    </tr>`;
+  });
+  tbl += `<tr style="font-weight:700;">
+    <td>GESAMT</td><td>${fmt(totals.gesamt)}</td>
+    <td style="color:#60A5FA">${fmt(totals.region)}</td><td style="color:rgba(255,255,255,0.4)">${pct(totals.region, totals.gesamt)}</td>
+    <td style="color:#A78BFA">${fmt(totals.kam)}</td><td style="color:rgba(255,255,255,0.4)">${pct(totals.kam, totals.gesamt)}</td>
+  </tr>`;
+  tbl += '</tbody></table>';
+  el.innerHTML = tbl;
+}
+
+// ── Contact Trend Line Chart (CEO Dashboard style) ──
+function renderContactTrend(fe) {
+  // Get all unique contacts with data
+  const contactMap = {};
+  fe.forEach(e => {
+    if (!e.ansprechpartner) return;
+    if (!contactMap[e.ansprechpartner]) contactMap[e.ansprechpartner] = {};
+    const key = fmtMonthKey(e.zahlungsziel || e.versprochenes_datum);
+    if (!key) return;
+    if (!contactMap[e.ansprechpartner][key]) contactMap[e.ansprechpartner][key] = 0;
+    contactMap[e.ansprechpartner][key] += Number(e.betrag) || 0;
+  });
+
+  const contacts = Object.keys(contactMap).sort();
+
+  // Init active contacts if empty
+  if (activeContacts.size === 0) {
+    contacts.forEach(c => activeContacts.add(c));
+  }
+
+  // Build filter chips
+  const chipsEl = document.getElementById('contact-chips');
+  chipsEl.innerHTML = contacts.map(c =>
+    `<button class="chart-chip ${activeContacts.has(c)?'active':''}" onclick="toggleContact('${c.replace(/'/g,"\\'")}')">${c}</button>`
+  ).join('');
+
+  // Get all months sorted
+  const allMonths = new Set();
+  Object.values(contactMap).forEach(map => Object.keys(map).forEach(k => allMonths.add(k)));
+  const sortedMonths = Array.from(allMonths).sort();
+  const labels = sortedMonths.map(fmtMonthLabel);
+
+  // Build datasets
+  const datasets = [];
+  const defaultColors = ['#60A5FA','#34D399','#A78BFA','#F59E0B','#F87171','#FB923C','#38BDF8','#C084FC'];
+
+  contacts.forEach((contact, i) => {
+    if (!activeContacts.has(contact)) return;
+    const color = CONTACT_COLORS[contact] || defaultColors[i % defaultColors.length];
+    datasets.push({
+      label: contact,
+      data: sortedMonths.map(m => contactMap[contact][m] || 0),
+      borderColor: color,
+      backgroundColor: color + '15',
+      borderWidth: 2,
+      fill: true,
+      tension: 0.3,
+      pointRadius: 3,
+      pointBackgroundColor: color,
+      pointHoverRadius: 5
+    });
+  });
+
+  // GmbH average line
+  if (showAvgLine && sortedMonths.length > 0) {
+    const avgData = sortedMonths.map(m => {
+      let sum = 0, count = 0;
+      contacts.forEach(c => {
+        if (contactMap[c][m]) { sum += contactMap[c][m]; count++; }
+      });
+      return count ? sum / count : 0;
+    });
+    datasets.push({
+      label: 'Ø GmbH',
+      data: avgData,
+      borderColor: '#F59E0B',
+      borderWidth: 2,
+      borderDash: [6, 3],
+      fill: false,
+      pointRadius: 2,
+      pointBackgroundColor: '#F59E0B',
+      tension: 0.3
+    });
+  }
+
+  chartObjs.contactTrend = new Chart(document.getElementById("chart-contact-trend"), {
+    type: 'line',
+    data: { labels, datasets },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      interaction: { mode:'index', intersect:false },
+      plugins: {
+        legend: { display: datasets.length > 1, position:'bottom', labels: { color:'rgba(255,255,255,0.5)', font:{size:10}, boxWidth:10, padding:10 } },
+        tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${fmtEur(ctx.raw)}` } }
+      },
+      scales: {
+        x: { ticks:{color:'rgba(255,255,255,0.35)',font:{size:9},maxRotation:45}, grid:{display:false}, border:{display:false} },
+        y: { beginAtZero:true, ticks:{color:'rgba(255,255,255,0.25)',font:{size:10},callback:v=>fmtEur(v,true)}, grid:{color:'rgba(255,255,255,0.05)'}, border:{display:false} },
+      }
+    }
+  });
+}
+
+function toggleContact(name) {
+  if (activeContacts.has(name)) activeContacts.delete(name);
+  else activeContacts.add(name);
+  renderCharts();
+}
+
+function toggleAvgLine() {
+  showAvgLine = !showAvgLine;
+  document.getElementById('toggle-avg-line').classList.toggle('active', showAvgLine);
+  renderCharts();
+}
+
+// ── Quarter Stacked Bar Chart ──
+function renderQuarterBarChart(fe) {
+  const qMap = {};
+  const persons = ['Fichtl', 'Frank Lorenz', 'Alexander Lein', 'Maik Balatka'];
+  fe.forEach(e => {
+    const d = e.zahlungsziel || e.versprochenes_datum;
+    const q = getQuartalFromDate(d);
+    if (!q) return;
+    if (!qMap[q]) qMap[q] = {};
+    const person = persons.includes(e.ansprechpartner) ? e.ansprechpartner : 'Andere';
+    if (!qMap[q][person]) qMap[q][person] = 0;
+    qMap[q][person] += Number(e.betrag) || 0;
+  });
+
+  const quarters = Object.keys(qMap).sort();
+  if (!quarters.length) return;
+
+  const allPersons = [...new Set(Object.values(qMap).flatMap(Object.keys))];
+  const personColors = { 'Frank Lorenz':'#60A5FA', 'Alexander Lein':'#34D399', 'Fichtl':'#F59E0B', 'Maik Balatka':'#A78BFA', 'Andere':'#FB923C' };
+
+  const datasets = allPersons.map(p => ({
+    label: p,
+    data: quarters.map(q => qMap[q][p] || 0),
+    backgroundColor: personColors[p] || '#888',
+    borderRadius: 3, borderSkipped: false
+  }));
+
+  chartObjs.quarterBar = new Chart(document.getElementById("chart-quarter-bar"), {
+    type: 'bar',
+    data: { labels: quarters, datasets },
+    options: {
+      responsive:true, maintainAspectRatio:false,
+      interaction: { mode:'index', intersect:false },
+      plugins: {
+        legend: { position:'bottom', labels: { color:'rgba(255,255,255,0.5)', font:{size:10}, boxWidth:10 } },
+        tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${fmtEur(ctx.raw)}` } }
+      },
+      scales: {
+        x: { stacked:true, ticks:{color:'rgba(255,255,255,0.35)',font:{size:10}}, grid:{display:false}, border:{display:false} },
+        y: { stacked:true, beginAtZero:true, ticks:{color:'rgba(255,255,255,0.25)',font:{size:10},callback:v=>fmtEur(v,true)}, grid:{color:'rgba(255,255,255,0.05)'}, border:{display:false} },
+      }
+    }
+  });
+}
+
+// ── Sortable TEF Table ──
+function renderTefTable(fe) {
+  const allC = [...TEF_CONTACTS.region.map(n=>({name:n,rolle:"Region"})),...TEF_CONTACTS.kam.map(n=>({name:n,rolle:"KAM"}))];
+  let rows = allC.map(c => {
+    const mine = fe.filter(e => e.ansprechpartner === c.name);
+    return {
+      ...c,
+      anzahl: mine.length,
+      summe: mine.reduce((s,e) => s+(Number(e.betrag)||0), 0),
+      ausgezahlt: mine.filter(e => e.status==='ausgezahlt').reduce((s,e) => s+(Number(e.betrag)||0), 0),
+      ausstehend: mine.filter(e => e.status!=='ausgezahlt' && e.status!=='abgelehnt').reduce((s,e) => s+(Number(e.betrag)||0), 0),
+    };
+  }).filter(r => r.anzahl > 0);
+
+  // Apply sorting
+  if (tefSortCol !== null) {
+    rows.sort((a,b) => {
+      const va = a[tefSortCol], vb = b[tefSortCol];
+      const diff = typeof va === 'number' ? va - vb : String(va).localeCompare(String(vb));
+      return tefSortAsc ? diff : -diff;
+    });
+  }
+
+  const tef = document.getElementById("tef-table");
+  if (!rows.length) {
+    tef.innerHTML = `<div style="text-align:center;padding:32px 0;font-size:12px;color:rgba(255,255,255,0.2);">Noch keine TEF-Einträge.</div>`;
+    return;
+  }
+
+  const cols = [
+    { key:'name', label:'Name' },
+    { key:'rolle', label:'Bereich' },
+    { key:'anzahl', label:'Einträge' },
+    { key:'summe', label:'Gesamt' },
+    { key:'ausgezahlt', label:'Ausgezahlt' },
+    { key:'ausstehend', label:'Ausstehend' },
+  ];
+
+  const sortIcon = col => {
+    if (tefSortCol !== col) return ' <span style="opacity:0.3;">⇅</span>';
+    return tefSortAsc ? ' ▲' : ' ▼';
+  };
+
+  tef.innerHTML = `<table><thead><tr>${cols.map(c =>
+    `<th class="sortable" onclick="sortTefTable('${c.key}')" style="cursor:pointer;">${c.label.toUpperCase()}${sortIcon(c.key)}</th>`
+  ).join('')}</tr></thead><tbody>
+    ${rows.map(r => `<tr>
+      <td style="color:#E2E8F0">${r.name}</td>
+      <td><span style="font-size:11px;padding:2px 8px;border-radius:12px;background:${r.rolle==="Region"?"rgba(96,165,250,0.15)":"rgba(167,139,250,0.15)"};color:${r.rolle==="Region"?"#60A5FA":"#A78BFA"}">${r.rolle}</span></td>
+      <td style="color:rgba(255,255,255,0.5)">${r.anzahl}</td>
+      <td style="color:#F1F5F9;font-weight:600">${fmtEur(r.summe)}</td>
+      <td style="color:#34D399">${r.ausgezahlt ? fmtEur(r.ausgezahlt) : "–"}</td>
+      <td style="color:#F59E0B">${r.ausstehend ? fmtEur(r.ausstehend) : "–"}</td>
+    </tr>`).join('')}
+  </tbody></table>`;
+}
+
+function sortTefTable(col) {
+  if (tefSortCol === col) tefSortAsc = !tefSortAsc;
+  else { tefSortCol = col; tefSortAsc = true; }
+  renderCharts();
+}
+
+// ── Maximize Overlay ──
+function maximizeChart(chartKey) {
+  const source = chartObjs[chartKey];
+  if (!source) return;
+
+  const overlay = document.getElementById('chart-overlay');
+  const titles = {
+    monthly: ['Monatliche Entwicklung', 'Kumulierter Verlauf nach Zahlungsziel'],
+    quelleDonut: ['Region vs. KAM', 'WKZ-Volumen nach Quelle'],
+    contactTrend: ['Ansprechpartner · Monatlicher Trend', 'WKZ-Volumen je Ansprechpartner über Zeit'],
+    quarterBar: ['Quartalsübersicht', 'Gestapelte Darstellung nach Ansprechpartner'],
+  };
+
+  document.getElementById('overlay-title').textContent = titles[chartKey]?.[0] || '';
+  document.getElementById('overlay-sub').textContent = titles[chartKey]?.[1] || '';
+
+  overlay.classList.add('active');
+
+  // Destroy previous overlay chart
+  if (overlayChart) { overlayChart.destroy(); overlayChart = null; }
+
+  const canvas = document.getElementById('overlay-canvas');
+  const clonedData = JSON.parse(JSON.stringify(source.data));
+  const clonedOpts = JSON.parse(JSON.stringify(source.options));
+
+  // Enhance options for overlay
+  clonedOpts.maintainAspectRatio = false;
+  if (clonedOpts.plugins) {
+    clonedOpts.plugins.legend = { display:true, position:'top', labels: { boxWidth:12, font:{size:12}, color:'rgba(255,255,255,0.6)' } };
+  }
+  if (clonedOpts.scales?.x?.ticks) clonedOpts.scales.x.ticks.font = { size:11 };
+  if (clonedOpts.scales?.y?.ticks) clonedOpts.scales.y.ticks.font = { size:11 };
+
+  overlayChart = new Chart(canvas, {
+    type: source.config.type,
+    data: clonedData,
+    options: clonedOpts
+  });
+}
+
+function closeOverlay() {
+  document.getElementById('chart-overlay').classList.remove('active');
+  if (overlayChart) { overlayChart.destroy(); overlayChart = null; }
+}
+
+
+// ── Form ──────────────────────────────────────────────────────────────────────
+function onPartnerChange() {
+  const p=document.getElementById("f-partner").value;
+  document.getElementById("tef-fields").style.display = p==="Telefónica / o2"?"block":"none";
+  document.getElementById("f-contact-free-wrap").style.display = p!=="Telefónica / o2"?"block":"none";
+  if(p==="Telefónica / o2") populateTefContacts();
+}
+
+function onTefQuelleChange() {
+  populateTefContacts();
+}
+
+function populateTefContacts() {
+  const quelle = document.querySelector('input[name="tef_quelle"]:checked').value;
+  const sel = document.getElementById("f-tef-contact");
+  sel.innerHTML = TEF_CONTACTS[quelle].map(n=>`<option>${n}</option>`).join("");
+}
+
+function onBedChange() {
+  const v=document.querySelector('input[name="bed"]:checked').value;
+  document.getElementById("bed-details").style.display=v==="ja"?"block":"none";
+}
+function onWkzTypChange() {
+  const v=document.querySelector('input[name="wkz_typ"]:checked').value;
+  document.getElementById("durchlaufend-details").style.display=v==="durchlaufend"?"block":"none";
+}
+
+function openNew() {
+  currentId=null;
+  document.getElementById("form-title").textContent="Neuen WKZ erfassen";
+  document.getElementById("form-submit-btn").textContent="WKZ erfassen";
+  document.getElementById("f-partner").value="Telefónica / o2";
+  document.getElementById("f-wofuer").value="";
+  document.getElementById("f-betrag").value="";
+  document.getElementById("f-datum").value="";
+  document.getElementById("f-zahlung").value="";
+  document.getElementById("f-bedingungen").value="";
+  document.getElementById("f-notizen").value="";
+  document.getElementById("f-status").value="offen";
+  document.getElementById("f-erfasst").value="Nico";
+  document.querySelector('input[name="tef_quelle"][value="region"]').checked=true;
+  document.querySelector('input[name="bed"][value="nein"]').checked=true;
+  document.getElementById("bed-details").style.display="none";
+  document.querySelector('input[name="wkz_typ"][value="premium"]').checked=true;
+  document.getElementById("durchlaufend-details").style.display="none";
+  document.getElementById("f-empfaenger").value="";
+  onPartnerChange();
+}
+
+function openEdit() {
+  const e=entries.find(x=>x.id===currentId);
+  if(!e) return;
+  document.getElementById("form-title").textContent="WKZ bearbeiten";
+  document.getElementById("form-submit-btn").textContent="Änderungen speichern";
+  document.getElementById("f-partner").value=e.partner;
+  document.getElementById("f-wofuer").value=e.wofuer||"";
+  document.getElementById("f-gutschrift").value=e.gutschrift||"";
+  document.getElementById("f-betrag").value=e.betrag||"";
+  document.getElementById("f-datum").value=e.versprochenes_datum||"";
+  document.getElementById("f-zahlung").value=e.zahlungsziel||"";
+  document.getElementById("f-bedingungen").value=e.bedingungen||"";
+  document.getElementById("f-notizen").value=e.notizen||"";
+  document.getElementById("f-status").value=e.status||"offen";
+  document.getElementById("f-erfasst").value=e.erfasst_von||"Nico";
+  if(e.tef_quelle) document.querySelector(`input[name="tef_quelle"][value="${e.tef_quelle}"]`).checked=true;
+  document.querySelector(`input[name="bed"][value="${e.hat_bedingungen||'nein'}"]`).checked=true;
+  document.getElementById("bed-details").style.display=e.hat_bedingungen==="ja"?"block":"none";
+  const typ = e.wkz_typ || "premium";
+  document.querySelector(`input[name="wkz_typ"][value="${typ}"]`).checked=true;
+  document.getElementById("durchlaufend-details").style.display=typ==="durchlaufend"?"block":"none";
+  document.getElementById("f-empfaenger").value=e.empfaenger||"";
+  onPartnerChange();
+  if(e.partner==="Telefónica / o2") document.getElementById("f-tef-contact").value=e.ansprechpartner;
+  else document.getElementById("f-contact-free").value=e.ansprechpartner||"";
+  showPage("form", null);
+}
+
+async function submitForm() {
+  const betrag=document.getElementById("f-betrag").value;
+  const wofuer=document.getElementById("f-wofuer").value;
+  const gutschrift=document.getElementById("f-gutschrift").value;
+  if(!betrag||!wofuer){showToast("Betrag und Verwendungszweck sind Pflichtfelder.",true);return;}
+  const partner=document.getElementById("f-partner").value;
+  const tef_quelle=document.querySelector('input[name="tef_quelle"]:checked').value;
+  const ansprechpartner=partner==="Telefónica / o2"
+    ? document.getElementById("f-tef-contact").value
+    : document.getElementById("f-contact-free").value;
+  const hat_bed=document.querySelector('input[name="bed"]:checked').value;
+  const wkz_typ=document.querySelector('input[name="wkz_typ"]:checked').value;
+  const empfaenger=wkz_typ==="durchlaufend"?document.getElementById("f-empfaenger").value:"";
+  const now=new Date().toISOString();
+  const entry={
+    id:currentId||uid(), partner, tef_quelle:partner==="Telefónica / o2"?tef_quelle:null,
+    ansprechpartner, betrag, gutschrift, wofuer,
+    versprochenes_datum:document.getElementById("f-datum").value,
+    zahlungsziel:document.getElementById("f-zahlung").value,
+    hat_bedingungen:hat_bed,
+    bedingungen:hat_bed==="ja"?document.getElementById("f-bedingungen").value:"",
+    wkz_typ, empfaenger,
+    status:document.getElementById("f-status").value,
+    erfasst_von:document.getElementById("f-erfasst").value,
+    notizen:document.getElementById("f-notizen").value,
+    created_at:currentId?(entries.find(x=>x.id===currentId)?.created_at||now):now,
+    updated_at:now,
+  };
+  const updated=currentId?entries.map(e=>e.id===currentId?entry:e):[entry,...entries];
+  const btn=document.getElementById("form-submit-btn");
+  btn.disabled=true; btn.textContent="Speichern…";
+  const ok=await saveEntries(updated);
+  btn.disabled=false; btn.textContent=currentId?"Änderungen speichern":"WKZ erfassen";
+  if(ok){ currentId=null; showPage("list",null); }
+}
+
+// ── Detail ────────────────────────────────────────────────────────────────────
+function openDetail(id) {
+  currentId=id;
+  const e=entries.find(x=>x.id===id);
+  if(!e) return;
+  let pills=statusPillHtml(e.status);
+  if(e.tef_quelle&&e.partner==="Telefónica / o2")
+    pills+=`<span class="badge ${e.tef_quelle==='region'?'badge-region':'badge-kam'}" style="font-size:11px;padding:3px 10px;border-radius:12px;">${e.tef_quelle==='region'?'Region':'KAM'}</span>`;
+  document.getElementById("detail-pills").innerHTML=pills;
+  document.getElementById("detail-amount").textContent=fmtEur(e.betrag);
+  document.getElementById("detail-partner").textContent=e.partner;
+  document.getElementById("detail-meta").innerHTML=`<div>Erfasst ${fmtDate(e.created_at)}</div><div>Geändert ${fmtDate(e.updated_at)}</div><div>von ${e.erfasst_von}</div>`;
+  const rows=[
+    ["Wofür",e.wofuer],
+    ["Gutschriftsnummer",e.gutschrift||"–"],
+    ["Ansprechpartner",e.ansprechpartner||"–"],
+    ["WKZ-Typ",e.wkz_typ==="durchlaufend"?"Durchlaufender Posten":"Premium WKZ"],
+    e.quelle==="steuerbuero"?["Quelle","📁 Import Steuerbüro"]:null,
+    e.wkz_typ==="durchlaufend"&&e.empfaenger?["Empfänger",e.empfaenger]:null,
+    ["Versprochen am",fmtDate(e.versprochenes_datum)],
+    ["Zahlung bis",fmtDate(e.zahlungsziel)],
+    ["Bedingungen",e.hat_bedingungen==="ja"?(e.bedingungen||"Ja (keine Details)"):"Keine Bedingungen"],
+    e.notizen?["Notizen",e.notizen]:null,
+  ].filter(Boolean);
+  document.getElementById("detail-rows").innerHTML=rows.map(([l,v])=>`
+    <div class="detail-row">
+      <div class="detail-row-label">${l}</div>
+      <div class="detail-row-value" style="${l==='Bedingungen'&&e.hat_bedingungen==='ja'?'color:#F59E0B':''}">${v}</div>
+    </div>`).join("");
+  document.getElementById("status-btns").innerHTML=Object.entries(STATUS_CONFIG).map(([k,v])=>{
+    const active=e.status===k;
+    return `<button class="status-change-btn" onclick="changeStatus('${k}')"
+      style="border:1px solid ${active?v.color:'rgba(255,255,255,0.1)'};background:${active?v.bg:'transparent'};color:${active?v.color:'rgba(255,255,255,0.35)'};font-weight:${active?700:400};"
+      ${active?'disabled':''}>
+      ${v.label}${active?" ✓":""}
+    </button>`;
+  }).join("");
+  showPage("detail",null);
+}
+
+async function changeStatus(status) {
+  const updated=entries.map(e=>e.id===currentId?{...e,status,updated_at:new Date().toISOString()}:e);
+  const ok=await saveEntries(updated);
+  if(ok) openDetail(currentId);
+}
+
+async function deleteEntry() {
+  if(!confirm("Eintrag wirklich löschen?")) return;
+  const updated=entries.filter(e=>e.id!==currentId);
+  const ok=await saveEntries(updated);
+  if(ok){ currentId=null; showPage("list",null); }
+}
+
+
+
+// ── Time filter state ────────────────────────────────────────────────────────
+const timeFilters = { dash:'alle', charts:'alle', list:'alle' };
+const customRanges = { dash:{from:'',to:''}, charts:{from:'',to:''}, list:{from:'',to:''} };
+
+function setTimeFilter(btn, value, scope) {
+  timeFilters[scope] = value;
+  var containerId = scope==="dash" ? "dash-time-filter" : scope==="charts" ? "charts-time-filter" : "list-time-filter";
+  var container = document.getElementById(containerId);
+  container.querySelectorAll(".tf-btn").forEach(function(b){ b.classList.remove("active"); });
+  btn.classList.add("active");
+  var qSel = document.getElementById(scope + "-q-select");
+  if (qSel) qSel.value = "";
+  var customEl = document.getElementById(scope + "-custom");
+  if (customEl) customEl.style.display = value==="custom" ? "flex" : "none";
+  if (scope==="dash") renderDashboard();
+  else if (scope==="charts") renderCharts();
+  else if (scope==="list") renderList();
+}
+
+function applyCustomFilter(scope) {
+  const from = document.getElementById(scope+'-from').value;
+  const to   = document.getElementById(scope+'-to').value;
+  customRanges[scope] = {from, to};
+  timeFilters[scope] = 'custom';
+  if (scope==='dash') renderDashboard();
+  else if (scope==='charts') renderCharts();
+  else renderList();
+}
+
+// ── Dynamic time filter ───────────────────────────────────────────────────────
+function buildFilterButtons() {
+  var years  = new Set();
+  var quarts = new Set();
+  getBaseEntries().forEach(function(e) {
+    var d = e.zahlungsziel || e.versprochenes_datum;
+    if (!d) return;
+    var dt = new Date(d);
+    var y  = dt.getFullYear();
+    var q  = Math.floor(dt.getMonth() / 3) + 1;
+    years.add(String(y));
+    quarts.add(y + "-Q" + q);
+  });
+  var sortedYears  = Array.from(years).sort(function(a,b){ return b-a; });
+  var sortedQuarts = Array.from(quarts).sort(function(a,b){ return b.localeCompare(a); });
+
+  ["dash","charts","list"].forEach(function(scope) {
+    var container = document.getElementById(scope + "-filter-btns");
+    if (!container) return;
+    var isAlle   = timeFilters[scope] === "alle";
+    var isCustom = timeFilters[scope] === "custom";
+    var selectedQ = quarts.has(timeFilters[scope]) ? timeFilters[scope] : "";
+    var h = "";
+    h += "<span class=\"time-filter-label\">Zeitraum</span>";
+    h += "<button class=\"tf-btn" + (isAlle ? " active" : "") + "\" onclick=\"setTimeFilter(this, 'alle', '" + scope + "')\">Alle</button>";
+    sortedYears.forEach(function(y) {
+      var act = timeFilters[scope] === y;
+      h += "<button class=\"tf-btn" + (act ? " active" : "") + "\" onclick=\"setTimeFilter(this, '" + y + "', '" + scope + "')\">" + y + "</button>";
+    });
+    h += "<select class=\"tf-select\" id=\"" + scope + "-q-select\" onchange=\"onQuarterSelect(this, '" + scope + "')\">";
+    h += "<option value=\"\">Quartal…</option>";
+    sortedQuarts.forEach(function(q) {
+      h += "<option value=\"" + q + "\"" + (selectedQ === q ? " selected" : "") + ">" + q + "</option>";
+    });
+    h += "</select>";
+    h += "<button class=\"tf-btn" + (isCustom ? " active" : "") + "\" onclick=\"setTimeFilter(this, 'custom', '" + scope + "')\">Benutzerdefiniert</button>";
+    h += "<span style=\"margin-left:12px;border-left:1px solid rgba(255,255,255,0.1);padding-left:12px;\"></span>";
+    h += "<button class=\"tf-btn stb-toggle" + (!hideSteuerbuero ? " active" : "") + "\" onclick=\"toggleSteuerbuero()\" style=\"font-size:11px;\">" + (hideSteuerbuero ? "📁 Steuerbüro ausgeblendet" : "📁 Steuerbüro eingeblendet") + "</button>";
+    container.innerHTML = h;
+  });
+}
+
+function onQuarterSelect(sel, scope) {
+  const val = sel.value;
+  if (!val) return;
+  const container = document.getElementById(scope + '-time-filter');
+  container.querySelectorAll('.tf-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(scope + '-custom').style.display = 'none';
+  timeFilters[scope] = val;
+  if (scope==='dash') renderDashboard();
+  else if (scope==='charts') renderCharts();
+  else renderList();
+}
+
+// ── Cockpit ───────────────────────────────────────────────────────────────────
+function renderCockpit(fe) {
+  const el = document.getElementById('list-cockpit');
+  if (!el) return;
+  const fmtK = v => {
+    if (!v) return '–';
+    if (v >= 1000000) return (v/1000000).toFixed(2).replace('.',',') + ' Mio €';
+    if (v >= 1000)    return (v/1000).toFixed(1).replace('.',',') + ' T€';
+    return new Intl.NumberFormat('de-DE',{style:'currency',currency:'EUR',maximumFractionDigits:0}).format(v);
+  };
+  const total      = fe.reduce((s,e)=>s+(Number(e.betrag)||0),0);
+  const ausgezahlt = fe.filter(e=>e.status==='ausgezahlt').reduce((s,e)=>s+(Number(e.betrag)||0),0);
+  const ausstehend = fe.filter(e=>e.status!=='ausgezahlt'&&e.status!=='abgelehnt').reduce((s,e)=>s+(Number(e.betrag)||0),0);
+  const abgelehnt  = fe.filter(e=>e.status==='abgelehnt').reduce((s,e)=>s+(Number(e.betrag)||0),0);
+  const anzahl     = fe.length;
+  const avgBetrag  = anzahl ? total/anzahl : 0;
+  const auszRate   = total ? (ausgezahlt/total*100).toFixed(1) : 0;
+  const monthMap   = {};
+  fe.forEach(e => {
+    const d = e.zahlungsziel||e.versprochenes_datum;
+    if (!d) return;
+    const key = new Date(d).toLocaleDateString('de-DE',{month:'short',year:'numeric'});
+    if (!monthMap[key]) monthMap[key]=0;
+    monthMap[key] += Number(e.betrag)||0;
+  });
+  const topMonth = Object.entries(monthMap).sort((a,b)=>b[1]-a[1])[0];
+  const persons = [
+    {name:'Fichtl', color:'#A78BFA', key:'Fichtl'},
+    {name:'Frank Lorenz',      color:'#60A5FA', key:'Frank Lorenz'},
+    {name:'Maik Balatka',      color:'#C084FC', key:'Maik Balatka'},
+    {name:'Alexander Lein',    color:'#34D399', key:'Alexander Lein'},
+  ];
+  const personTotals = persons.map(p => ({
+    ...p,
+    value: fe.filter(e=>e.ansprechpartner===p.key).reduce((s,e)=>s+(Number(e.betrag)||0),0),
+  }));
+  const maxPerson = Math.max(...personTotals.map(p=>p.value), 1);
+  const statusRows = [
+    {label:'Ausgezahlt', value:ausgezahlt, color:'#34D399'},
+    {label:'Ausstehend', value:ausstehend, color:'#60A5FA'},
+    {label:'Abgelehnt',  value:abgelehnt,  color:'#F87171'},
+  ];
+  const maxStatus = Math.max(...statusRows.map(s=>s.value), 1);
+
+  el.innerHTML =
+    '<div class="cockpit">' +
+      '<div class="cockpit-card"><div class="cockpit-label">Gesamtvolumen</div><div class="cockpit-value" style="color:#F1F5F9;">' + fmtK(total) + '</div><div class="cockpit-sub">' + anzahl + ' Transaktionen</div></div>' +
+      '<div class="cockpit-card"><div class="cockpit-label">Ausgezahlt</div><div class="cockpit-value" style="color:#34D399;">' + fmtK(ausgezahlt) + '</div><div class="cockpit-sub">Auszahlungsquote ' + auszRate + '%</div></div>' +
+      '<div class="cockpit-card"><div class="cockpit-label">Ausstehend</div><div class="cockpit-value" style="color:#F59E0B;">' + fmtK(ausstehend) + '</div><div class="cockpit-sub">' + fe.filter(e=>e.status==='offen').length + ' offen · ' + fe.filter(e=>e.status==='beantragt').length + ' beantragt</div></div>' +
+      '<div class="cockpit-card"><div class="cockpit-label">Ø pro Transaktion</div><div class="cockpit-value" style="color:#60A5FA;">' + fmtK(avgBetrag) + '</div><div class="cockpit-sub">Stärkster Monat: ' + (topMonth ? topMonth[0] : '–') + '</div></div>' +
+    '</div>' +
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px;">' +
+      '<div class="cockpit-bar-wrap"><div class="cockpit-bar-title">Volumen nach Ansprechpartner</div>' +
+        personTotals.map(p =>
+          '<div class="cockpit-bar-row"><div class="cockpit-bar-name">' + p.name + '</div>' +
+          '<div class="cockpit-bar-track"><div class="cockpit-bar-fill" style="width:' + (p.value/maxPerson*100).toFixed(1) + '%;background:' + p.color + ';"></div></div>' +
+          '<div class="cockpit-bar-val">' + fmtK(p.value) + '</div></div>'
+        ).join('') +
+      '</div>' +
+      '<div class="cockpit-bar-wrap"><div class="cockpit-bar-title">Volumen nach Status</div>' +
+        statusRows.map(s =>
+          '<div class="cockpit-bar-row"><div class="cockpit-bar-name">' + s.label + '</div>' +
+          '<div class="cockpit-bar-track"><div class="cockpit-bar-fill" style="width:' + (s.value/maxStatus*100).toFixed(1) + '%;background:' + s.color + ';"></div></div>' +
+          '<div class="cockpit-bar-val">' + fmtK(s.value) + '</div></div>'
+        ).join('') +
+      '</div>' +
+    '</div>';
+}
+
+
+function getBaseEntries() {
+  if (hideSteuerbuero) return entries.filter(e => e.quelle !== 'steuerbuero');
+  return entries;
+}
+
+function toggleSteuerbuero() {
+  hideSteuerbuero = !hideSteuerbuero;
+  // Update all toggle buttons
+  document.querySelectorAll('.stb-toggle').forEach(btn => {
+    btn.classList.toggle('active', !hideSteuerbuero);
+    btn.textContent = hideSteuerbuero ? '📁 Steuerbüro ausgeblendet' : '📁 Steuerbüro eingeblendet';
+  });
+  buildFilterButtons();
+  renderDashboard();
+  renderList();
+  renderCharts();
+}
+
+function getFilteredEntries(scope) {
+  const base = getBaseEntries();
+  const tf = timeFilters[scope];
+  if (tf === 'alle') return base;
+  return base.filter(e => {
+    const d = e.zahlungsziel || e.versprochenes_datum;
+    if (!d) return false;
+    if (tf === 'custom') {
+      const cr = customRanges[scope];
+      if (cr.from && d < cr.from) return false;
+      if (cr.to   && d > cr.to)   return false;
+      return true;
+    }
+    if (/^\d{4}-Q[1-4]$/.test(tf)) {
+      const [year, qpart] = tf.split('-Q');
+      const qNum = parseInt(qpart);
+      const dt = new Date(d);
+      const entryYear = dt.getFullYear();
+      const entryQ    = Math.floor(dt.getMonth() / 3) + 1;
+      return entryYear === parseInt(year) && entryQ === qNum;
+    }
+    return d.startsWith(tf);
+  });
+}
+
+function getPeriodLabel(scope) {
+  const tf = timeFilters[scope];
+  if (tf === 'alle') return 'Alle Zeiträume';
+  if (tf === 'custom') {
+    const cr = customRanges[scope];
+    const f = cr.from ? new Date(cr.from).toLocaleDateString('de-DE') : '?';
+    const t = cr.to   ? new Date(cr.to).toLocaleDateString('de-DE')   : '?';
+    return `${f} – ${t}`;
+  }
+  if (/^\d{4}-Q[1-4]$/.test(tf)) return tf;
+  return `Jahr ${tf}`;
+}
+
+// ── Quartal + Jahr table helpers ──────────────────────────────────────────────
+function getQuartalFromDate(d) {
+  if (!d) return null;
+  const dt = new Date(d);
+  const y = dt.getFullYear();
+  const m = dt.getMonth();
+  const q = Math.floor(m/3)+1;
+  return `${y}-Q${q}`;
+}
+
+function renderQuartalTable(filteredEntries, containerId) {
+  const qMap = {};
+  filteredEntries.forEach(e => {
+    const d = e.zahlungsziel || e.versprochenes_datum;
+    const q = getQuartalFromDate(d);
+    if (!q) return;
+    if (!qMap[q]) qMap[q] = { quartal:q, gesamt:0, af:0, fl:0, mb:0, al:0 };
+    const b = Number(e.betrag)||0;
+    qMap[q].gesamt += b;
+    if (e.ansprechpartner==='Fichtl')   qMap[q].af += b;
+    else if (e.ansprechpartner==='Maik Balatka') qMap[q].mb += b;
+    else if (e.ansprechpartner==='Alexander Lein') qMap[q].al += b;
+    else qMap[q].fl += b;
+  });
+
+  const rows = Object.values(qMap).sort((a,b)=>a.quartal.localeCompare(b.quartal));
+  if (!rows.length) { document.getElementById(containerId).innerHTML='<div style="text-align:center;padding:24px;font-size:12px;color:rgba(255,255,255,0.2);">Keine Daten im gewählten Zeitraum.</div>'; return; }
+
+  const totals = rows.reduce((t,r)=>({gesamt:t.gesamt+r.gesamt,af:t.af+r.af,fl:t.fl+r.fl,mb:t.mb+r.mb,al:t.al+r.al}),{gesamt:0,af:0,fl:0,mb:0,al:0});
+
+  const fmt = v => v ? new Intl.NumberFormat('de-DE',{style:'currency',currency:'EUR',maximumFractionDigits:0}).format(v) : '–';
+
+  let tbl = `<div style="overflow-x:auto;"><table class="q-table">
+    <thead><tr>
+      <th>Quartal</th>
+      <th>WKZ Gesamt</th>
+      <th>Fichtl (KAM)</th>
+      <th>Frank Lorenz (Region)</th>
+      <th>Maik Balatka (Region)</th>
+      <th>Alexander Lein (Region)</th>
+    </tr></thead><tbody>`;
+
+  rows.forEach(r => {
+    tbl += `<tr>
+      <td>${r.quartal}</td>
+      <td>${fmt(r.gesamt)}</td>
+      <td>${fmt(r.af)}</td>
+      <td>${fmt(r.fl)}</td>
+      <td>${fmt(r.mb)}</td>
+      <td>${fmt(r.al)}</td>
+    </tr>`;
+  });
+
+  tbl += `<tr>
+    <td>GESAMT</td>
+    <td>${fmt(totals.gesamt)}</td>
+    <td>${fmt(totals.af)}</td>
+    <td>${fmt(totals.fl)}</td>
+    <td>${fmt(totals.mb)}</td>
+    <td>${fmt(totals.al)}</td>
+  </tr>`;
+
+  tbl += '</tbody></table></div>';
+  document.getElementById(containerId).innerHTML = tbl;
+}
+
+function renderJahresTable(filteredEntries, containerId) {
+  const yMap = {};
+  filteredEntries.forEach(e => {
+    const d = e.zahlungsziel || e.versprochenes_datum;
+    if (!d) return;
+    const y = d.substring(0,4);
+    if (!yMap[y]) yMap[y] = { jahr:y, gesamt:0, af:0, fl:0, mb:0, al:0, anzahl:0 };
+    const b = Number(e.betrag)||0;
+    yMap[y].gesamt += b;
+    yMap[y].anzahl++;
+    if (e.ansprechpartner==='Fichtl')   yMap[y].af += b;
+    else if (e.ansprechpartner==='Maik Balatka') yMap[y].mb += b;
+    else if (e.ansprechpartner==='Alexander Lein') yMap[y].al += b;
+    else yMap[y].fl += b;
+  });
+
+  const rows = Object.values(yMap).sort((a,b)=>a.jahr.localeCompare(b.jahr));
+  if (!rows.length) { document.getElementById(containerId).innerHTML='<div style="text-align:center;padding:24px;font-size:12px;color:rgba(255,255,255,0.2);">Keine Daten im gewählten Zeitraum.</div>'; return; }
+
+  const totals = rows.reduce((t,r)=>({gesamt:t.gesamt+r.gesamt,af:t.af+r.af,fl:t.fl+r.fl,mb:t.mb+r.mb,al:t.al+r.al,anzahl:t.anzahl+r.anzahl}),{gesamt:0,af:0,fl:0,mb:0,al:0,anzahl:0});
+
+  const fmt  = v => v ? new Intl.NumberFormat('de-DE',{style:'currency',currency:'EUR',maximumFractionDigits:0}).format(v) : '–';
+  const pct  = (v,t) => t ? `${((v/t)*100).toFixed(1)}%` : '–';
+
+  let tbl = `<div style="overflow-x:auto;"><table class="q-table">
+    <thead><tr>
+      <th>Jahr</th>
+      <th>WKZ Gesamt</th>
+      <th>Fichtl</th>
+      <th>AF %</th>
+      <th>Frank Lorenz</th>
+      <th>FL %</th>
+      <th>Maik Balatka</th>
+      <th>MB %</th>
+      <th>Alexander Lein</th>
+      <th>Transaktionen</th>
+    </tr></thead><tbody>`;
+
+  rows.forEach(r => {
+    tbl += `<tr>
+      <td>${r.jahr}</td>
+      <td>${fmt(r.gesamt)}</td>
+      <td>${fmt(r.af)}</td>
+      <td style="color:rgba(255,255,255,0.45)">${pct(r.af,r.gesamt)}</td>
+      <td>${fmt(r.fl)}</td>
+      <td style="color:rgba(255,255,255,0.45)">${pct(r.fl,r.gesamt)}</td>
+      <td>${fmt(r.mb)}</td>
+      <td style="color:rgba(255,255,255,0.45)">${pct(r.mb,r.gesamt)}</td>
+      <td>${fmt(r.al)}</td>
+      <td style="color:rgba(255,255,255,0.45)">${r.anzahl}</td>
+    </tr>`;
+  });
+
+  tbl += `<tr>
+    <td>GESAMT</td>
+    <td>${fmt(totals.gesamt)}</td>
+    <td>${fmt(totals.af)}</td>
+    <td style="color:rgba(255,255,255,0.45)">${pct(totals.af,totals.gesamt)}</td>
+    <td>${fmt(totals.fl)}</td>
+    <td style="color:rgba(255,255,255,0.45)">${pct(totals.fl,totals.gesamt)}</td>
+    <td>${fmt(totals.mb)}</td>
+    <td style="color:rgba(255,255,255,0.45)">${pct(totals.mb,totals.gesamt)}</td>
+    <td>${fmt(totals.al)}</td>
+    <td style="color:rgba(255,255,255,0.45)">${totals.anzahl}</td>
+  </tr>`;
+
+  tbl += '</tbody></table></div>';
+  document.getElementById(containerId).innerHTML = tbl;
+}
+
+// Init TEF contacts on load
+populateTefContacts();
+</script>
+</body>
+</html>
