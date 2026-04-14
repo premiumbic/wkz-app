@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>WKZ · Dropbox Verbindung</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Courier New', monospace;
+      background: #0A0E1A; color: #C9D1E0;
+      min-height: 100vh; display: flex; align-items: center; justify-content: center;
+    }
+    .box {
+      text-align: center; padding: 40px; max-width: 400px;
+    }
+    .title {
+      font-size: 20px; font-weight: 800; color: #F1F5F9;
+      margin-bottom: 8px; letter-spacing: -0.5px;
+    }
+    .sub { font-size: 12px; color: rgba(255,255,255,0.35); margin-bottom: 24px; }
+    .spinner {
+      width: 28px; height: 28px;
+      border: 3px solid rgba(96,165,250,0.2); border-top-color: #60A5FA;
+      border-radius: 50%; animation: spin 0.8s linear infinite;
+      margin: 0 auto 16px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .status { font-size: 13px; color: rgba(255,255,255,0.5); }
+    .success { color: #34D399; font-weight: 700; }
+    .error { color: #F87171; font-weight: 700; }
+    .detail { font-size: 11px; color: rgba(255,255,255,0.25); margin-top: 12px; }
+  </style>
+</head>
+<body>
+  <div class="box">
+    <div class="title">WKZ Controlling</div>
+    <div class="sub">Dropbox Autorisierung</div>
+    <div class="spinner" id="spinner"></div>
+    <div class="status" id="status">Verbindung wird hergestellt…</div>
+    <div class="detail" id="detail"></div>
+  </div>
+
+  <script>
+    const statusEl  = document.getElementById('status');
+    const detailEl  = document.getElementById('detail');
+    const spinnerEl = document.getElementById('spinner');
+
+    function done(msg, isError) {
+      spinnerEl.style.display = 'none';
+      statusEl.textContent = msg;
+      statusEl.className = 'status ' + (isError ? 'error' : 'success');
+      if (!isError) {
+        detailEl.textContent = 'Dieses Fenster schließt sich automatisch…';
+        setTimeout(() => window.close(), 1500);
+      }
+    }
+
+    (function init() {
+      const params = new URLSearchParams(window.location.search);
+      const hash   = new URLSearchParams(window.location.hash.substring(1));
+
+      // ── PKCE flow: authorization code in query string ──
+      const code = params.get('code');
+      if (code) {
+        statusEl.textContent = 'Autorisierungscode erhalten…';
+        if (window.opener) {
+          window.opener.postMessage({ type: 'DBX_AUTH_CODE', code: code }, '*');
+          done('Verbunden! Token wird ausgetauscht.', false);
+        } else {
+          done('Fehler: Hauptfenster nicht erreichbar.', true);
+          detailEl.textContent = 'Bitte den Code manuell kopieren: ' + code;
+        }
+        return;
+      }
+
+      // ── Legacy flow: token in hash (backward compat) ──
+      const token = hash.get('access_token');
+      if (token) {
+        if (window.opener) {
+          window.opener.postMessage({ type: 'DBX_TOKEN', token: token }, '*');
+          done('Token erhalten!', false);
+        } else {
+          done('Token erhalten, aber Hauptfenster nicht erreichbar.', true);
+          detailEl.textContent = 'Bitte manuell kopieren.';
+        }
+        return;
+      }
+
+      // ── Error handling ──
+      const error = params.get('error') || hash.get('error');
+      if (error) {
+        const desc = params.get('error_description') || hash.get('error_description') || error;
+        done('Autorisierung fehlgeschlagen', true);
+        detailEl.textContent = desc;
+        return;
+      }
+
+      done('Keine Autorisierungsdaten erhalten.', true);
+      detailEl.textContent = 'Bitte versuche es erneut.';
+    })();
+  </script>
+</body>
+</html>
