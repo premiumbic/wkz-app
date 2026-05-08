@@ -946,53 +946,30 @@ const CONTACT_COLORS = {
   'Fichtl':  '#F59E0B',
 };
 
-// ── Team Namespace (Business-Support) ────────────────────────────────────────
-let teamRootNS    = null;
-let useSelectAdmin = false;   // true wenn Team-Token erkannt wird
+// ── Team Namespace (resolved at boot) ────────────────────────────────────────
+let teamRootNS  = null;   // set after first auth — used as Dropbox-API-Path-Root
 
 async function resolveTeamNamespace(token) {
+  // Already resolved?
   if (teamRootNS) return;
   try {
-    // 1. Versuch: normaler User-Token
     const r = await fetch("https://api.dropboxapi.com/2/users/get_current_account", {
       method: "POST",
-      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-      body: "null"
+      headers: { Authorization: `Bearer ${token}` }
     });
-    if (r.ok) {
-      const acct = await r.json();
-      const rootNS = acct?.root_info?.root_namespace_id;
-      if (rootNS) { teamRootNS = rootNS; console.log("[WKZ] Namespace:", rootNS); }
-      return;
+    if (!r.ok) return;
+    const acct = await r.json();
+    // Business accounts have root_info.root_namespace_id
+    const rootNS = acct?.root_info?.root_namespace_id;
+    if (rootNS) {
+      teamRootNS = rootNS;
+      console.log("[WKZ] Team root namespace:", rootNS);
     }
-    // 2. Wenn 400 → Team-Token: Select-Admin Header verwenden
-    if (r.status === 400) {
-      console.log("[WKZ] Team-Token erkannt, verwende Select-Admin…");
-      useSelectAdmin = true;
-      const r2 = await fetch("https://api.dropboxapi.com/2/users/get_current_account", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`, "Content-Type": "application/json",
-          "Dropbox-API-Select-Admin": "true"
-        },
-        body: "null"
-      });
-      if (r2.ok) {
-        const acct2 = await r2.json();
-        const rootNS = acct2?.root_info?.root_namespace_id;
-        if (rootNS) { teamRootNS = rootNS; console.log("[WKZ] Team-Namespace:", rootNS); }
-      } else {
-        console.warn("[WKZ] Select-Admin fehlgeschlagen:", r2.status, await r2.text());
-      }
-    }
-  } catch (e) { console.warn("[WKZ] Namespace-Auflösung fehlgeschlagen:", e); }
+  } catch (e) { console.warn("[WKZ] Could not resolve namespace:", e); }
 }
 
 function dbxHeaders(token, extra) {
   const h = { Authorization: `Bearer ${token}`, ...extra };
-  if (useSelectAdmin) {
-    h["Dropbox-API-Select-Admin"] = "true";
-  }
   if (teamRootNS) {
     h["Dropbox-API-Path-Root"] = JSON.stringify({".tag": "root", "root": teamRootNS});
   }
